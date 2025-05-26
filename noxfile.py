@@ -161,7 +161,7 @@ def _testing_requirements(
             or req.startswith("polars ")
             and sys.platform == "darwin"
         ):
-            req = "polars-lts-cpu"
+            req = "polars-lts-cpu < 1.30.0"  # TODO(deepyaman): Support latest Polars.
         # for some reason uv will try to install an old version of dask,
         # have to specifically pin dask[dataframe] to a higher version
         if (
