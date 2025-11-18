@@ -24,10 +24,10 @@ class DataFrameSchema(_DataFrameSchema[pd.DataFrame]):
     def validate(
         self,
         check_obj: pd.DataFrame,
-        head: Optional[int] = None,
-        tail: Optional[int] = None,
-        sample: Optional[int] = None,
-        random_state: Optional[int] = None,
+        head: int | None = None,
+        tail: int | None = None,
+        sample: int | None = None,
+        random_state: int | None = None,
         lazy: bool = False,
         inplace: bool = False,
     ) -> pd.DataFrame:
@@ -127,10 +127,10 @@ class DataFrameSchema(_DataFrameSchema[pd.DataFrame]):
     def _validate(
         self,
         check_obj: pd.DataFrame,
-        head: Optional[int] = None,
-        tail: Optional[int] = None,
-        sample: Optional[int] = None,
-        random_state: Optional[int] = None,
+        head: int | None = None,
+        tail: int | None = None,
+        sample: int | None = None,
+        random_state: int | None = None,
         lazy: bool = False,
         inplace: bool = False,
     ) -> pd.DataFrame:
@@ -165,9 +165,7 @@ class DataFrameSchema(_DataFrameSchema[pd.DataFrame]):
     ###########################
 
     @strategy_import_error
-    def strategy(
-        self, *, size: Optional[int] = None, n_regex_columns: int = 1
-    ):
+    def strategy(self, *, size: int | None = None, n_regex_columns: int = 1):
         """Create a ``hypothesis`` strategy for generating a DataFrame.
 
         :param size: number of elements to generate
@@ -189,7 +187,7 @@ class DataFrameSchema(_DataFrameSchema[pd.DataFrame]):
         )
 
     def example(
-        self, size: Optional[int] = None, n_regex_columns: int = 1
+        self, size: int | None = None, n_regex_columns: int = 1
     ) -> pd.DataFrame:
         """Generate an example of a particular size.
 

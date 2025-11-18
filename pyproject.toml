@@ -175,6 +175,15 @@ extend-exclude = [
     "setup.py",
     "asv_bench",
 ]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "UP",
+]
+ignore = [
+    "UP007",
+]
 
 [tool.codespell]
 ignore-words-list = ["notin", "splitted", "fo", "strat"]
