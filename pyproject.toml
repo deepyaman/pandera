@@ -89,8 +89,8 @@ dask = [
     "dask[dataframe]",
     "distributed",
 ]
-ibis = ["ibis-framework >= 9.0.0"]
-polars = ["polars >= 0.20.0"]
+ibis = ["ibis-framework >= 9.0.0", "narwhals >= 1.0.0"]
+polars = ["polars >= 0.20.0", "narwhals >= 1.0.0"]
 all = [
     "hypothesis >= 6.92.7",
     "scipy",
