@@ -46,7 +46,8 @@ Plans:
 **Goal:** Address the remaining unresolved PR #2223 review comments — redesign horizontal concat in checks/components, remove Polars-specific code from postprocess_bool_output, investigate custom checks Ibis delegation, and fix backend-specific dtype logic in check_dtype.
 **Requirements**: TBD
 **Depends on:** Phase 1
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 2 to break down)
+- [ ] 02-01-PLAN.md — checks.py: replace horizontal concat with with_columns, replace polars import in postprocess_bool_output, document IbisCheckBackend delegation
+- [ ] 02-02-PLAN.md — components.py: refactor check_nullable to with_columns, simplify check_dtype to single narwhals-engine pass
