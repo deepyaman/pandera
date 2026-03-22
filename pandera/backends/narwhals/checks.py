@@ -167,12 +167,10 @@ class NarwhalsCheckBackend(BaseCheckBackend):
         check_output: bool,
     ) -> CheckResult:
         """Postprocesses bool check output into a CheckResult."""
-        import polars as pl
-
-        lf = nw.from_native(
-            pl.LazyFrame({CHECK_OUTPUT_KEY: [check_output]}),
-            eager_or_interchange_only=False,
-        )
+        ns = nw.get_native_namespace(check_obj.frame)
+        lf = nw.from_dict(
+            {CHECK_OUTPUT_KEY: [check_output]}, native_namespace=ns
+        ).lazy()
         return CheckResult(
             check_output=lf,
             check_passed=lf,
