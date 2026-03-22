@@ -57,6 +57,7 @@ Phase 01 decisions:
 
 - Phase 01 added: PR Review Architecture Fixes (4 plans)
 - v1.0 milestone complete (5 phases, 18 plans)
+- Phase 02 added: Remaining PR Review Fixes (horizontal concat, postprocess_bool_output polars code, custom checks delegation, check_dtype backend logic)
 
 ### Pending Todos
 

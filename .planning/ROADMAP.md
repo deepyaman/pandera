@@ -40,3 +40,13 @@ Plans:
 - [x] 01-01-PLAN.md — ErrorHandler architecture: strip ibis from base, create NarwhalsErrorHandler (1/1 complete)
 - [x] 01-02-PLAN.md — Wire NarwhalsErrorHandler into backends, fix container polars coupling, fix comment, fix capitalization
 - [x] 01-03-PLAN.md — Gap closure: fix validate() premature materialization, remaining capitalization nits, ROADMAP marker
+
+### Phase 2: Remaining PR Review Fixes
+
+**Goal:** Address the remaining unresolved PR #2223 review comments — redesign horizontal concat in checks/components, remove Polars-specific code from postprocess_bool_output, investigate custom checks Ibis delegation, and fix backend-specific dtype logic in check_dtype.
+**Requirements**: TBD
+**Depends on:** Phase 1
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 2 to break down)
