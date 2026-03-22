@@ -39,8 +39,17 @@ if self.check.n_failure_cases is not None:
 ### Materialization Point: run_check Only (Locked)
 Materialization (calling `_materialize`) only happens in `run_check` when evaluating the scalar `passed` boolean and when extracting `failure_cases`. This is the correct boundary — the check backend stays lazy, the schema backend materializes when it needs concrete values.
 
-### failure_cases Type for Ibis (Locked)
-For ibis builtin checks, `failure_cases` should be a **narwhals-wrapped lazy ibis Table** — consistent with custom ibis check behavior. NOT `pyarrow.Table`, NOT `pl.DataFrame`.
+### failure_cases Type: Always nw.DataFrame (Locked)
+`failure_cases` in `CoreCheckResult` must always be a **narwhals frame** (`nw.DataFrame`) — never unwrapped to a backend-native type (`pl.DataFrame`, `ibis.Table`, `pyarrow.Table`). This applies to both Polars and ibis paths. `_to_native` must NOT be called on `failure_cases` in `run_check`.
+
+Rationale: `_to_native` in `run_check`'s narwhals path is the root cause of the pyarrow.Table bug for ibis. Keeping `failure_cases` as `nw.DataFrame` throughout eliminates the need for backend-specific type detection in `run_check` and keeps the narwhals abstraction intact.
+
+`failure_cases_metadata` is the correct place to unwrap to native types when needed for backend-specific index computation.
+
+### _is_ibis_result Guard: Do NOT Extend (Locked)
+Do NOT extend the `_is_ibis_result` guard in `run_check` to detect narwhals-wrapped ibis frames. After this phase, ibis builtin checks produce narwhals frames that flow through the regular narwhals path in `run_check` — no special ibis branching needed for builtin checks.
+
+The `_is_ibis_result` guard only remains for `native=True` custom checks that return raw `ir.BooleanScalar`/`ibis.Table` outside the narwhals type system.
 
 ### Return Type of __call__ (Decision)
 `NarwhalsCheckBackend.__call__` returns whatever type the input frame is — `nw.LazyFrame` for Polars, `nw.DataFrame` wrapping ibis for ibis. No type normalization. Callers already handle both.
