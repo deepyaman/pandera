@@ -137,7 +137,8 @@ class NarwhalsCheckBackend(BaseCheckBackend):
         check_output,
     ) -> CheckResult:
         """Postprocesses LazyFrame check output into a CheckResult."""
-        # Materialize both frames — Narwhals does NOT support lazy horizontal concat
+        # Materialize results so its Series can be passed to with_columns below.
+        # data_df must also be collected to produce an eager combined frame.
         results_df = self._materialize(check_output)
         if self.check.ignore_na:
             results_df = results_df.with_columns(
@@ -145,7 +146,7 @@ class NarwhalsCheckBackend(BaseCheckBackend):
             )
         passed = results_df.select(nw.col(CHECK_OUTPUT_KEY).all())
         data_df = self._materialize(check_obj.frame)
-        combined = nw.concat([data_df, results_df], how="horizontal")
+        combined = data_df.with_columns(results_df[CHECK_OUTPUT_KEY])
         failure_cases = combined.filter(~nw.col(CHECK_OUTPUT_KEY))
 
         if check_obj.key != "*":
