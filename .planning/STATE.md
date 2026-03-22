@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_plan: 3 of 3
-status: in-progress
+status: completed
 stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-22T17:02:22.271Z"
-last_activity: 2026-03-22 — Plan 03-02 complete (apply() rewrite, IbisCheckBackend delegation removed)
+last_updated: "2026-03-22T17:07:00.477Z"
+last_activity: 2026-03-22 — Plan 03-02 complete (apply() rewrite, all 14 builtin checks pass on polars + ibis)
 progress:
   total_phases: 3
-  completed_phases: 2
-  total_plans: 8
+  completed_phases: 3
+  total_plans: 7
   completed_plans: 7
   percent: 87
 ---
