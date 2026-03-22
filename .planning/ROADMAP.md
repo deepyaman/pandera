@@ -60,5 +60,5 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Add native param to Check, propagate native=False for builtins, refactor all 14 builtin check signatures
+- [x] 03-01-PLAN.md — Add native param to Check, propagate native=False for builtins, refactor all 14 builtin check signatures (1/1 complete — 2026-03-22)
 - [ ] 03-02-PLAN.md — Rewrite apply() with native-flag dispatch, remove ibis delegation from __call__, add normalization helper and tests

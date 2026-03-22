@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 1 of 3
-status: completed
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-22T16:28:48.978Z"
-last_activity: 2026-03-22 — Plan 02-01 complete (NarwhalsCheckBackend refactor)
+current_plan: 2 of 3
+status: in-progress
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-22T16:53:25.000Z"
+last_activity: 2026-03-22 — Plan 03-01 complete (native flag + builtin signature refactor)
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
-  percent: 67
+  total_plans: 8
+  completed_plans: 6
+  percent: 75
 ---
 
 # Project State
@@ -26,10 +26,10 @@ See: .planning/PROJECT.md (updated 2026-03-15 after v1.0 milestone)
 
 ## Current Position
 
-Phase: 02-remaining-pr-review-fixes
-Current Plan: 1 of 3
-Status: Plan 02-01 complete — NarwhalsCheckBackend refactored
-Last activity: 2026-03-22 — Plan 02-01 complete (NarwhalsCheckBackend refactor)
+Phase: 03-fix-ibischeckbackend-delegation-via-apply-type-dispatch
+Current Plan: 2 of 3
+Status: Plan 03-01 complete — native flag added, 14 builtin signatures refactored
+Last activity: 2026-03-22 — Plan 03-01 complete (native flag + builtin signature refactor)
 
 Progress: [███████░░░] 67%
 
@@ -57,6 +57,11 @@ Phase 02 decisions:
 - data_df.with_columns(results_df[CHECK_OUTPUT_KEY]) is the correct pattern for column attachment — avoids positional alignment brittleness of horizontal concat
 - nw.get_native_namespace(frame) + nw.from_dict(...).lazy() creates backend-agnostic LazyFrames without importing polars directly
 
+Phase 03 decisions:
+- native=False is placed before **kws in from_builtin_check_name cls() call — explicit keyword cannot be overridden by user-provided kwargs
+- NarwhalsData import removed from builtin_checks.py — was only needed as a type annotation, no longer used after signature refactor
+- test_builtin_checks_pass/fail are expected RED after plan 03-01 — plan 03-02 fixes apply() dispatch to call check_fn(frame, key) via native=False path
+
 ### Roadmap Evolution
 
 - Phase 01 added: PR Review Architecture Fixes (4 plans)
@@ -76,6 +81,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-22T16:28:48.974Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-fix-ibischeckbackend-delegation-via-apply-type-dispatch/03-CONTEXT.md
+Last session: 2026-03-22T16:53:25Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: .planning/phases/03-fix-ibischeckbackend-delegation-via-apply-type-dispatch/03-01-SUMMARY.md
