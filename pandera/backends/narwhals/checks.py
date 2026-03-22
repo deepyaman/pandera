@@ -1,6 +1,5 @@
 """Check backend for Narwhals."""
 
-import inspect
 from functools import partial
 from typing import Optional
 
@@ -40,7 +39,7 @@ class NarwhalsCheckBackend(BaseCheckBackend):
         return check_obj
 
     def apply(self, check_obj: NarwhalsData):
-        """Apply check — route to NarwhalsData or native container."""
+        """Apply check function — dispatch on self.check.native flag."""
         if self.check.element_wise:
             selector = nw.col(check_obj.key or "*")
             try:
@@ -56,36 +55,31 @@ class NarwhalsCheckBackend(BaseCheckBackend):
                     "cannot be applied to lazy query plans. "
                     "Use a vectorized check instead."
                 )
+        elif self.check.native:
+            # native=True: unwrap to backend-native type, call (native_frame, key)
+            native_frame = nw.to_native(check_obj.frame)
+            out = self.check_fn(native_frame, check_obj.key)
+            out = self._normalize_native_output(out, check_obj)
         else:
-            # Detect builtin vs user-defined by checking whether the
-            # underlying function (Dispatcher or plain callable) has a
-            # NarwhalsData-annotated first argument or is a Dispatcher with
-            # NarwhalsData registered.
-            check_fn = self.check_fn
-            # Unwrap partial to get the actual callable
-            inner_fn = check_fn.func if hasattr(check_fn, "func") else check_fn
-
-            is_builtin = False
+            # native=False: narwhals frame and key (builtin checks path).
+            # Builtin check_fn is a partial(Dispatcher, **kwargs). Ibis frames
+            # arrive as nw.DataFrame but Dispatcher is keyed on nw.LazyFrame,
+            # so we look up the nw.LazyFrame implementation and re-apply kwargs.
             from pandera.api.function_dispatch import Dispatcher
-            if isinstance(inner_fn, Dispatcher):
-                # Builtin check: Dispatcher has NarwhalsData in its registry
-                is_builtin = NarwhalsData in inner_fn._function_registry
+            check_fn = self.check_fn
+            inner_fn = check_fn.func if hasattr(check_fn, "func") else check_fn
+            kwargs = check_fn.keywords if hasattr(check_fn, "keywords") else {}
+            if isinstance(inner_fn, Dispatcher) and not isinstance(
+                check_obj.frame, nw.LazyFrame
+            ):
+                # Retrieve the narwhals-registered implementation directly.
+                narwhals_fn = inner_fn._function_registry.get(nw.LazyFrame)
+                if narwhals_fn is not None:
+                    out = narwhals_fn(check_obj.frame, check_obj.key, **kwargs)
+                else:
+                    out = check_fn(check_obj.frame, check_obj.key)
             else:
-                sig = inspect.signature(inner_fn)
-                params = list(sig.parameters.values())
-                first_param = params[0] if params else None
-                is_builtin = (
-                    first_param is not None
-                    and first_param.annotation is NarwhalsData
-                )
-
-            if is_builtin:
-                # Builtin check: pass NarwhalsData directly
-                out = check_fn(check_obj)
-            else:
-                # User-defined: unwrap to native frame and call
-                native_frame = nw.to_native(check_obj.frame)
-                out = check_fn(native_frame)
+                out = check_fn(check_obj.frame, check_obj.key)
 
         if isinstance(out, bool):
             return out
@@ -101,6 +95,29 @@ class NarwhalsCheckBackend(BaseCheckBackend):
         else:
             out = out.rename({col_names[0]: CHECK_OUTPUT_KEY})
 
+        return out
+
+    @staticmethod
+    def _normalize_native_output(out, check_obj: NarwhalsData):
+        """Normalize ibis outputs from native=True checks to narwhals types.
+
+        Polars and bool outputs pass through unchanged.
+        """
+        try:
+            import ibis
+            import ibis.expr.types as ir
+            if isinstance(out, ir.BooleanScalar):
+                return bool(out.execute())
+            elif isinstance(out, ir.BooleanColumn):
+                # Promote to a one-column ibis Table then wrap with narwhals.
+                # Use the native table from check_obj to host the column expression.
+                native = nw.to_native(check_obj.frame)
+                tbl = native.select(out.name(CHECK_OUTPUT_KEY))
+                return nw.from_native(tbl, eager_or_interchange_only=False)
+            elif isinstance(out, ibis.Table):
+                return nw.from_native(out, eager_or_interchange_only=False)
+        except ImportError:
+            pass
         return out
 
     def postprocess(self, check_obj: NarwhalsData, check_output):
@@ -167,10 +184,19 @@ class NarwhalsCheckBackend(BaseCheckBackend):
         check_output: bool,
     ) -> CheckResult:
         """Postprocesses bool check output into a CheckResult."""
-        ns = nw.get_native_namespace(check_obj.frame)
-        lf = nw.from_dict(
-            {CHECK_OUTPUT_KEY: [check_output]}, native_namespace=ns
-        ).lazy()
+        # SQL-lazy backends (ibis) do not support nw.from_dict — use polars
+        # as the eager namespace for bool scalar results.
+        try:
+            ns = nw.get_native_namespace(check_obj.frame)
+            lf = nw.from_dict(
+                {CHECK_OUTPUT_KEY: [check_output]}, native_namespace=ns
+            ).lazy()
+        except (ValueError, AttributeError):
+            import polars as pl
+            lf = nw.from_native(
+                pl.LazyFrame({CHECK_OUTPUT_KEY: [check_output]}),
+                eager_or_interchange_only=False,
+            )
         return CheckResult(
             check_output=lf,
             check_passed=lf,
@@ -184,47 +210,6 @@ class NarwhalsCheckBackend(BaseCheckBackend):
         key: Optional[str] = None,
     ) -> CheckResult:
         check_obj = self.preprocess(check_obj, key)
-
-        # Ibis delegation: for user-defined (non-builtin) checks on ibis-backed frames,
-        # delegate to IbisCheckBackend so ibis check functions receive IbisData(table, key)
-        # rather than a raw ibis.Table. Builtin checks go through the Narwhals path because
-        # they are implemented against NarwhalsData and do not need IbisData wrapping.
-        native = (
-            nw.to_native(check_obj)
-            if isinstance(check_obj, (nw.LazyFrame, nw.DataFrame))
-            else check_obj
-        )
-        try:
-            import ibis as _ibis
-            if isinstance(native, _ibis.Table):
-                # Determine builtin vs user-defined using the same Dispatcher registry
-                # lookup as apply() — replicated here to avoid entering apply() for
-                # the ibis user-defined delegation branch.
-                check_fn = self.check_fn
-                inner_fn = check_fn.func if hasattr(check_fn, "func") else check_fn
-                from pandera.api.function_dispatch import Dispatcher
-
-                is_builtin = (
-                    isinstance(inner_fn, Dispatcher)
-                    and NarwhalsData in inner_fn._function_registry
-                )
-                # element_wise checks must go through the Narwhals path so
-                # apply() can raise the NotImplementedError for SQL-lazy backends
-                # (IbisCheckBackend would attempt to create a UDF instead).
-                if not is_builtin and not self.check.element_wise:
-                    # User-defined ibis check: delegate entirely to IbisCheckBackend.
-                    # IbisCheckBackend.preprocess() calls as_table(), wraps in IbisData,
-                    # applies the check fn, and postprocesses — returning ibis lazy types.
-                    # TODO: apply() should unwrap NarwhalsData to the type the check
-                    # function expects (via type annotation inspection), making this
-                    # IbisCheckBackend delegation unnecessary.
-                    from pandera.backends.ibis.checks import IbisCheckBackend
-
-                    return IbisCheckBackend(self.check)(native, key)
-        except ImportError:
-            pass
-
-        # Narwhals path: builtins on ibis, and all checks on non-ibis backends
         narwhals_data = NarwhalsData(check_obj, key or "*")
         check_output = self.apply(narwhals_data)
         return self.postprocess(narwhals_data, check_output)

@@ -159,16 +159,16 @@ def test_builtin_check_routing(make_narwhals_frame):
 
 
 def test_user_defined_check_routing(make_narwhals_frame):
-    """CHECKS-01: user-defined check (no NarwhalsData annotation) receives native frame."""
+    """CHECKS-01: user-defined check (native=True) receives (native_frame, key)."""
     import narwhals.stable.v1 as nw
 
     received = []
 
-    def user_check(frame):
-        received.append(type(frame))
+    def user_check(frame, key):
+        received.append((frame, key))
         return True
 
-    check = Check(user_check)
+    check = Check(user_check)  # native=True by default
     lf = make_narwhals_frame({"x": [1, 2, 3]})
 
     from pandera.backends.narwhals.checks import NarwhalsCheckBackend
@@ -176,8 +176,10 @@ def test_user_defined_check_routing(make_narwhals_frame):
     backend(lf, key="x")
 
     assert len(received) == 1
-    # User-defined check receives the native frame, not nw.LazyFrame
-    assert not isinstance(received[0], type(lf))
+    frame_received, key_received = received[0]
+    # User-defined check receives the native frame (not nw.LazyFrame/nw.DataFrame wrapper)
+    assert not isinstance(frame_received, (nw.LazyFrame, nw.DataFrame))
+    assert key_received == "x"
 
 
 # ---------------------------------------------------------------------------
