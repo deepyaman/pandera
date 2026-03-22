@@ -25,7 +25,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 |-------|-----------|----------------|--------|-----------|
 | 1. Foundation | v1.0 | 2/2 | Complete | 2026-03-09 |
 | 2. Check Backend | 1/2 | In Progress|  | 2026-03-10 |
-| 3. Column Backend | v1.0 | 2/2 | Complete | 2026-03-14 |
+| 3. Column Backend | 2/2 | Complete   | 2026-03-22 | 2026-03-14 |
 | 4. Container Backend and Polars Registration | v1.0 | 5/5 | Complete | 2026-03-14 |
 | 5. Ibis Registration and Integration | v1.0 | 6/6 | Complete | 2026-03-15 |
 
@@ -57,7 +57,7 @@ Plans:
 **Goal:** Remove IbisCheckBackend delegation from NarwhalsCheckBackend by introducing a native flag on Check that controls what apply() passes to the check function. Unify the calling convention for all checks to check_fn(frame, key). No new user-facing capabilities — purely architectural clean-up.
 **Requirements**: TBD
 **Depends on:** Phase 2
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 03-01-PLAN.md — Add native param to Check, propagate native=False for builtins, refactor all 14 builtin check signatures (1/1 complete — 2026-03-22)

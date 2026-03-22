@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 2 of 3
+current_plan: 3 of 3
 status: in-progress
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-03-22T16:53:25.000Z"
-last_activity: 2026-03-22 — Plan 03-01 complete (native flag + builtin signature refactor)
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-03-22T17:02:22.271Z"
+last_activity: 2026-03-22 — Plan 03-02 complete (apply() rewrite, IbisCheckBackend delegation removed)
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 8
-  completed_plans: 6
-  percent: 75
+  completed_plans: 7
+  percent: 87
 ---
 
 # Project State
@@ -27,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-03-15 after v1.0 milestone)
 ## Current Position
 
 Phase: 03-fix-ibischeckbackend-delegation-via-apply-type-dispatch
-Current Plan: 2 of 3
-Status: Plan 03-01 complete — native flag added, 14 builtin signatures refactored
-Last activity: 2026-03-22 — Plan 03-01 complete (native flag + builtin signature refactor)
+Current Plan: 3 of 3
+Status: Plan 03-02 complete — apply() rewritten, IbisCheckBackend delegation removed
+Last activity: 2026-03-22 — Plan 03-02 complete (apply() rewrite, all 14 builtin checks pass on polars + ibis)
 
-Progress: [███████░░░] 67%
+Progress: [█████████░] 87%
 
 ## Accumulated Context
 
@@ -61,6 +61,8 @@ Phase 03 decisions:
 - native=False is placed before **kws in from_builtin_check_name cls() call — explicit keyword cannot be overridden by user-provided kwargs
 - NarwhalsData import removed from builtin_checks.py — was only needed as a type annotation, no longer used after signature refactor
 - test_builtin_checks_pass/fail are expected RED after plan 03-01 — plan 03-02 fixes apply() dispatch to call check_fn(frame, key) via native=False path
+- [Phase 03]: Dispatcher used in native=False branch for ibis nw.DataFrame frames: look up nw.LazyFrame impl directly and call with partial kwargs to avoid KeyError
+- [Phase 03]: postprocess_bool_output falls back to polars LazyFrame when nw.from_dict fails for ibis SQL-lazy backends
 
 ### Roadmap Evolution
 
@@ -81,6 +83,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-22T16:53:25Z
-Stopped at: Completed 03-01-PLAN.md
-Resume file: .planning/phases/03-fix-ibischeckbackend-delegation-via-apply-type-dispatch/03-01-SUMMARY.md
+Last session: 2026-03-22T17:02:22.269Z
+Stopped at: Completed 03-02-PLAN.md
+Resume file: .planning/phases/03-fix-ibischeckbackend-delegation-via-apply-type-dispatch/03-02-SUMMARY.md
