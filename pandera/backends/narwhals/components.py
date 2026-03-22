@@ -238,7 +238,10 @@ class ColumnBackend(NarwhalsSchemaBackend):
             # Use narwhals_engine for comparison — Engine.dtype() now accepts
             # cross-engine dtypes (polars_engine, ibis_engine) by re-interpreting
             # through the shared abstract pandera base class. Parametric types
-            # (List, Struct) fall back to a direct check.
+            # (List, Struct) fall back to a direct check, which will report
+            # WRONG_DATATYPE for cross-engine schemas. TODO: root fix is in schema
+            # construction — pandera.polars/pandera.ibis should produce narwhals
+            # engine dtypes when the Narwhals backend is active.
             try:
                 schema_nw_dtype = narwhals_engine.Engine.dtype(schema.dtype)
                 passed = schema_nw_dtype.check(col_pandera_dtype)

@@ -215,6 +215,9 @@ class NarwhalsCheckBackend(BaseCheckBackend):
                     # User-defined ibis check: delegate entirely to IbisCheckBackend.
                     # IbisCheckBackend.preprocess() calls as_table(), wraps in IbisData,
                     # applies the check fn, and postprocesses — returning ibis lazy types.
+                    # TODO: apply() should unwrap NarwhalsData to the type the check
+                    # function expects (via type annotation inspection), making this
+                    # IbisCheckBackend delegation unnecessary.
                     from pandera.backends.ibis.checks import IbisCheckBackend
 
                     return IbisCheckBackend(self.check)(native, key)
