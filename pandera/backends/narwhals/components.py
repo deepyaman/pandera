@@ -124,33 +124,35 @@ class ColumnBackend(NarwhalsSchemaBackend):
         if self.is_float_dtype(check_obj, col):
             null_expr = null_expr | nw.col(col).is_nan()
 
-        is_null_lf = check_obj.select(null_expr)
-        # Materialize both — Narwhals does NOT support lazy horizontal concat
-        data_df = _materialize(check_obj)
-        is_null_df = _materialize(is_null_lf)
+        # Add null indicator inline — single LazyFrame op, no separate frame materialization.
+        combined_lf = check_obj.with_columns(null_expr.alias(CHECK_OUTPUT_KEY))
 
-        results = []
-        for column in is_null_df.collect_schema().names():
-            if not is_null_df[column].any():
-                continue
-            combined = nw.concat(
-                [data_df, is_null_df.rename({column: CHECK_OUTPUT_KEY})],
-                how="horizontal",
-            )
-            failure_cases = _to_native(
-                combined.filter(nw.col(CHECK_OUTPUT_KEY)).select(column)
-            )
-            results.append(
+        # _materialize handles both nw.LazyFrame (collect) and SQL-lazy DataFrame (execute).
+        combined_df = _materialize(combined_lf)
+        has_nulls = combined_df[CHECK_OUTPUT_KEY].any()
+
+        if not has_nulls:
+            return [
                 CoreCheckResult(
-                    passed=False,
-                    check_output=is_null_df.rename({column: CHECK_OUTPUT_KEY}),
+                    passed=True,
                     check="not_nullable",
                     reason_code=SchemaErrorReason.SERIES_CONTAINS_NULLS,
-                    message=f"non-nullable column '{schema.selector}' contains null values",
-                    failure_cases=failure_cases,
                 )
+            ]
+
+        failure_cases = _to_native(
+            combined_df.filter(nw.col(CHECK_OUTPUT_KEY)).select(col)
+        )
+        return [
+            CoreCheckResult(
+                passed=False,
+                check_output=combined_df.select(CHECK_OUTPUT_KEY),
+                check="not_nullable",
+                reason_code=SchemaErrorReason.SERIES_CONTAINS_NULLS,
+                message=f"non-nullable column '{schema.selector}' contains null values",
+                failure_cases=failure_cases,
             )
-        return results
+        ]
 
     @validate_scope(scope=ValidationScope.DATA)
     def check_unique(self, check_obj, schema) -> list[CoreCheckResult]:
