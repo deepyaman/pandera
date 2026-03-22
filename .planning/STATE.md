@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: complete (3 of 3)
-status: completed
-stopped_at: Phase 02 context gathered
-last_updated: "2026-03-22T14:53:58.981Z"
-last_activity: 2026-03-22 — Plan 01-03 complete (phase complete)
+current_plan: 1 of 3
+status: in_progress
+stopped_at: Completed 02-remaining-pr-review-fixes/02-01-PLAN.md
+last_updated: "2026-03-22T15:09:00.000Z"
+last_activity: 2026-03-22 — Plan 02-01 complete (NarwhalsCheckBackend refactor)
 progress:
   total_phases: 2
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 100
+  total_plans: 6
+  completed_plans: 4
+  percent: 67
 ---
 
 # Project State
@@ -22,16 +22,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15 after v1.0 milestone)
 
 **Core value:** Users can validate any Narwhals-supported dataframe library through a single, consistent backend — reducing maintenance burden and unlocking lazy validation and future library support for free.
-**Current focus:** PR Review Architecture Fixes (Phase 01) — cleaning up class hierarchy and architectural issues found during PR review.
+**Current focus:** Remaining PR Review Fixes (Phase 02) — eliminating polars-specific coupling and fragile concat in checks.py, plus custom checks delegation and check_dtype backend logic.
 
 ## Current Position
 
-Phase: 01-pr-review-architecture-fixes
-Current Plan: complete (3 of 3)
-Status: Phase 01 complete — all 3 plans executed
-Last activity: 2026-03-22 — Plan 01-03 complete (phase complete)
+Phase: 02-remaining-pr-review-fixes
+Current Plan: 1 of 3
+Status: Plan 02-01 complete — NarwhalsCheckBackend refactored
+Last activity: 2026-03-22 — Plan 02-01 complete (NarwhalsCheckBackend refactor)
 
-Progress: [██████████] 100%
+Progress: [███████░░░] 67%
 
 ## Accumulated Context
 
@@ -53,6 +53,10 @@ Phase 01 decisions:
 - [Phase 01-pr-review-architecture-fixes]: subsample() receives nw.LazyFrame directly; _to_frame_kind_nw deferred to return statements only — no native round-trips before checks
 - [Phase 01-pr-review-architecture-fixes]: drop_invalid_rows branch creates check_obj_parsed locally via _to_frame_kind_nw and returns immediately
 
+Phase 02 decisions:
+- data_df.with_columns(results_df[CHECK_OUTPUT_KEY]) is the correct pattern for column attachment — avoids positional alignment brittleness of horizontal concat
+- nw.get_native_namespace(frame) + nw.from_dict(...).lazy() creates backend-agnostic LazyFrames without importing polars directly
+
 ### Roadmap Evolution
 
 - Phase 01 added: PR Review Architecture Fixes (4 plans)
@@ -71,6 +75,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-22T14:53:58.978Z
-Stopped at: Phase 02 context gathered
-Resume file: .planning/phases/02-remaining-pr-review-fixes/02-CONTEXT.md
+Last session: 2026-03-22T15:09:00.000Z
+Stopped at: Completed 02-remaining-pr-review-fixes/02-01-PLAN.md
+Resume file: .planning/phases/02-remaining-pr-review-fixes/02-01-SUMMARY.md

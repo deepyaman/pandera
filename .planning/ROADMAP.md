@@ -24,7 +24,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Foundation | v1.0 | 2/2 | Complete | 2026-03-09 |
-| 2. Check Backend | v1.0 | 3/3 | Complete | 2026-03-10 |
+| 2. Check Backend | 1/2 | In Progress|  | 2026-03-10 |
 | 3. Column Backend | v1.0 | 2/2 | Complete | 2026-03-14 |
 | 4. Container Backend and Polars Registration | v1.0 | 5/5 | Complete | 2026-03-14 |
 | 5. Ibis Registration and Integration | v1.0 | 6/6 | Complete | 2026-03-15 |
@@ -46,7 +46,7 @@ Plans:
 **Goal:** Address the remaining unresolved PR #2223 review comments — redesign horizontal concat in checks/components, remove Polars-specific code from postprocess_bool_output, investigate custom checks Ibis delegation, and fix backend-specific dtype logic in check_dtype.
 **Requirements**: TBD
 **Depends on:** Phase 1
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 02-01-PLAN.md — checks.py: replace horizontal concat with with_columns, replace polars import in postprocess_bool_output, document IbisCheckBackend delegation
