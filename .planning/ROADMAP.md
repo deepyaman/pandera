@@ -68,8 +68,9 @@ Plans:
 **Goal:** Make `postprocess_lazyframe_output` fully lazy — `apply()` attaches `CHECK_OUTPUT_KEY` to the full frame via `with_columns` (returning the same lazy type as input), `postprocess_lazyframe_output` builds `passed` and `failure_cases` lazily without materializing `check_obj.frame`, and materialization only happens in `run_check` when evaluating the scalar `passed` boolean. Fixes `failure_cases` being `pyarrow.Table` for ibis builtin checks — it will instead be a narwhals-wrapped lazy ibis Table.
 **Requirements**: LAZY-01, LAZY-02, LAZY-03, LAZY-04, LAZY-05, LAZY-06, LAZY-07, LAZY-08
 **Depends on:** Phase 3
-**Plans:** 2 plans
+**Plans:** 3 plans
 
 Plans:
 - [ ] 04-01-PLAN.md — Write failing test stubs + update ibis e2e failure_cases assertions (RED baseline)
-- [ ] 04-02-PLAN.md — Implement wide-table apply(), lazy postprocess_lazyframe_output, extend run_check ibis guard
+- [ ] 04-02-PLAN.md — Rewrite apply() wide-table + lazy postprocess_lazyframe_output (checks.py only)
+- [ ] 04-03-PLAN.md — Remove _to_native from run_check + narwhals-ify failure_cases_metadata (base.py only)
