@@ -228,38 +228,23 @@ class ColumnBackend(NarwhalsSchemaBackend):
 
         results = []
         schema_obj = check_obj.select(schema.selector).collect_schema()
-        # Try to get native polars schema for polars_engine dtype compatibility.
-        # For ibis or other non-polars backends, fall back to None (use nw dtype only).
-        try:
-            native_obj = nw.to_native(check_obj)
-            # Polars LazyFrame has collect_schema(); ibis Table does not.
-            native_schema = native_obj.collect_schema() if hasattr(native_obj, "collect_schema") else None
-        except Exception:
-            native_schema = None
 
         for column, nw_dtype in zip(schema_obj.names(), schema_obj.dtypes()):
-            # Try narwhals engine first (for narwhals_engine dtypes in schema)
-            # Fall back to passing the nw_dtype or native dtype directly
             try:
                 col_pandera_dtype = narwhals_engine.Engine.dtype(nw_dtype)
             except TypeError:
-                col_pandera_dtype = nw_dtype  # fallback: .check() will return False
-            passed = schema.dtype.check(col_pandera_dtype)
-            if not passed and native_schema is not None:
-                # Second attempt: pass native polars dtype (handles polars_engine schema dtypes)
-                native_dtype = native_schema.get(column, nw_dtype)
-                passed = schema.dtype.check(native_dtype)
-            if not passed:
-                try:
-                    import ibis as _ibis
-                    native_check_obj = nw.to_native(check_obj)
-                    if isinstance(native_check_obj, _ibis.Table):
-                        ibis_schema = native_check_obj.schema()
-                        ibis_native_dtype = ibis_schema.get(column)
-                        if ibis_native_dtype is not None:
-                            passed = schema.dtype.check(ibis_native_dtype)
-                except ImportError:
-                    pass
+                col_pandera_dtype = nw_dtype
+
+            # Use narwhals_engine for comparison — Engine.dtype() now accepts
+            # cross-engine dtypes (polars_engine, ibis_engine) by re-interpreting
+            # through the shared abstract pandera base class. Parametric types
+            # (List, Struct) fall back to a direct check.
+            try:
+                schema_nw_dtype = narwhals_engine.Engine.dtype(schema.dtype)
+                passed = schema_nw_dtype.check(col_pandera_dtype)
+            except TypeError:
+                passed = schema.dtype.check(col_pandera_dtype)
+
             results.append(
                 CoreCheckResult(
                     passed=bool(passed),

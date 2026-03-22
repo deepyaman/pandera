@@ -91,10 +91,29 @@ class Engine(metaclass=engine.Engine, base_pandera_dtypes=DataType):
     @classmethod
     def dtype(cls, data_type: Any) -> dtypes.DataType:
         """Convert input into a narwhals-compatible
-        Pandera :class:`~pandera.dtypes.DataType` object."""
+        Pandera :class:`~pandera.dtypes.DataType` object.
+
+        If ``data_type`` is an engine-specific dtype from another backend
+        (e.g. ``polars_engine.Int64``), the method falls back to the shared
+        abstract pandera base class (e.g. ``dtypes.Int64``) so cross-engine
+        dtype comparisons work without importing the foreign engine.
+        """
         try:
             return engine.Engine.dtype(cls, data_type)
         except TypeError:
+            # data_type may be an instance from another engine (polars, ibis, …).
+            # Each engine-specific class inherits from a shared abstract pandera
+            # dtype (e.g. polars_engine.Int64 → dtypes.Int64). Re-interpreting
+            # through that abstract base lets narwhals_engine handle cross-engine
+            # dtype inputs. Parametric types (List, Struct) have no abstract base
+            # in pandera.dtypes and will still raise TypeError.
+            bases = type(data_type).__bases__
+            abstract_base = bases[-1] if bases else None
+            if abstract_base is not None and abstract_base is not dtypes.DataType:
+                try:
+                    return engine.Engine.dtype(cls, abstract_base())
+                except TypeError:
+                    pass
             raise TypeError(
                 f"data type '{data_type}' not understood by "
                 f"{cls.__name__}."
