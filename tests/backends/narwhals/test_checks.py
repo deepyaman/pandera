@@ -133,29 +133,40 @@ BUILTIN_CHECK_CASES = [
 # CHECKS-01: builtin check routing — NarwhalsData dispatched
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(strict=False, reason="requires builtin_checks.py from plan 02-03")
 def test_builtin_check_routing(make_narwhals_frame):
-    """CHECKS-01: builtin check receives NarwhalsData (not native frame)."""
-    from pandera.api.narwhals.types import NarwhalsData
+    """CHECKS-01: builtin check (native=False) receives (nw.LazyFrame/DataFrame, key)."""
+    import narwhals.stable.v1 as nw
 
     received = []
 
-    # Wrap equal_to's check_fn to capture what it receives
-    original_check_fn = Check.equal_to(5)._check_fn
+    # Wrap the underlying equal_to function to capture what it receives
+    from pandera.api.function_dispatch import Dispatcher
+    original_dispatcher = Check.equal_to(5)._check_fn
+    assert isinstance(original_dispatcher, Dispatcher), "expected Dispatcher"
+    original_fn = original_dispatcher._function_registry[nw.LazyFrame]
 
-    def capturing_fn(data, **kwargs):
-        received.append(type(data))
-        return original_check_fn(data, **kwargs)
+    def capturing_fn(frame, key, **kwargs):
+        received.append((frame, key))
+        return original_fn(frame, key, **kwargs)
 
-    check = Check(capturing_fn, value=5)
-    frame = make_narwhals_frame({"x": [5, 5, 5]})
+    # Patch the registry so our capturing function runs
+    original_dispatcher._function_registry[nw.LazyFrame] = capturing_fn
+    try:
+        check = Check.equal_to(5)
+        frame = make_narwhals_frame({"x": [5, 5, 5]})
 
-    from pandera.backends.narwhals.checks import NarwhalsCheckBackend
-    backend = NarwhalsCheckBackend(check)
-    backend(frame, key="x")
+        from pandera.backends.narwhals.checks import NarwhalsCheckBackend
+        backend = NarwhalsCheckBackend(check)
+        backend(frame, key="x")
+    finally:
+        # Restore original function
+        original_dispatcher._function_registry[nw.LazyFrame] = original_fn
 
     assert len(received) == 1
-    assert received[0] is NarwhalsData
+    frame_received, key_received = received[0]
+    # Builtin receives narwhals frame (LazyFrame or DataFrame), not native
+    assert isinstance(frame_received, (nw.LazyFrame, nw.DataFrame))
+    assert key_received == "x"
 
 
 def test_user_defined_check_routing(make_narwhals_frame):
@@ -281,3 +292,121 @@ def test_element_wise_sql_lazy_raises(make_narwhals_frame):
 
     with pytest.raises(NotImplementedError, match="element_wise checks are not supported"):
         backend(frame, key="x")
+
+
+# ---------------------------------------------------------------------------
+# TEST-01: native=True dispatch convention — new tests for plan 03-02
+# ---------------------------------------------------------------------------
+
+def test_native_true_user_check_polars(make_narwhals_frame):
+    """native=True check on Polars receives (pl.LazyFrame, key)."""
+    import narwhals.stable.v1 as nw
+
+    received = []
+
+    def user_check(frame, key):
+        received.append((type(frame), key))
+        return True
+
+    check = Check(user_check)  # native=True by default
+    lf = make_narwhals_frame({"x": [1, 2, 3]})
+
+    native = nw.to_native(lf)
+    backend_name = type(native).__module__.split(".")[0]
+    if backend_name != "polars":
+        pytest.skip("polars-specific test")
+
+    from pandera.backends.narwhals.checks import NarwhalsCheckBackend
+    backend = NarwhalsCheckBackend(check)
+    backend(lf, key="x")
+
+    assert len(received) == 1
+    frame_type, key_received = received[0]
+    # Native Polars frame, not narwhals wrapper
+    assert "polars" in frame_type.__module__
+    assert key_received == "x"
+
+
+def test_native_true_user_check_ibis(make_narwhals_frame):
+    """native=True check on Ibis receives (ibis.Table, key)."""
+    pytest.importorskip("ibis")
+    import ibis
+    import narwhals.stable.v1 as nw
+
+    received = []
+
+    def user_check(frame, key):
+        received.append((frame, key))
+        return True
+
+    check = Check(user_check)  # native=True by default
+    lf = make_narwhals_frame({"x": [1, 2, 3]})
+
+    native = nw.to_native(lf)
+    if not isinstance(native, ibis.Table):
+        pytest.skip("ibis-specific test")
+
+    from pandera.backends.narwhals.checks import NarwhalsCheckBackend
+    backend = NarwhalsCheckBackend(check)
+    backend(lf, key="x")
+
+    assert len(received) == 1
+    frame_received, key_received = received[0]
+    assert isinstance(frame_received, ibis.Table)
+    assert key_received == "x"
+
+
+def test_native_false_user_check(make_narwhals_frame):
+    """native=False check receives narwhals-wrapped frame and key."""
+    import narwhals.stable.v1 as nw
+
+    received = []
+
+    def user_check(frame, key):
+        received.append((frame, key))
+        return frame.select(nw.col(key) > 0)
+
+    check = Check(user_check, native=False)
+    lf = make_narwhals_frame({"x": [1, 2, 3]})
+
+    from pandera.backends.narwhals.checks import NarwhalsCheckBackend
+    backend = NarwhalsCheckBackend(check)
+    result = backend(lf, key="x")
+
+    assert len(received) == 1
+    frame_received, key_received = received[0]
+    assert isinstance(frame_received, (nw.LazyFrame, nw.DataFrame))
+    assert key_received == "x"
+
+
+def test_ibis_boolean_scalar_normalization(make_narwhals_frame):
+    """native=True check returning ir.BooleanScalar normalizes to bool CheckResult."""
+    pytest.importorskip("ibis")
+    import ibis
+    import narwhals.stable.v1 as nw
+
+    def scalar_check(frame, key):
+        # Return a scalar: all values > 0
+        return frame[key].min() > 0
+
+    check = Check(scalar_check)  # native=True
+    lf = make_narwhals_frame({"x": [1, 2, 3]})
+
+    native = nw.to_native(lf)
+    if not isinstance(native, ibis.Table):
+        pytest.skip("ibis-specific test")
+
+    from pandera.backends.narwhals.checks import NarwhalsCheckBackend
+    backend = NarwhalsCheckBackend(check)
+    result = backend(lf, key="x")
+
+    # check_passed should be truthy for all-positive data
+    passed = result.check_passed
+    if isinstance(passed, (nw.LazyFrame, nw.DataFrame)):
+        from pandera.constants import CHECK_OUTPUT_KEY
+        if isinstance(passed, nw.LazyFrame):
+            passed = passed.collect()
+        val = bool(passed[CHECK_OUTPUT_KEY][0])
+    else:
+        val = bool(passed)
+    assert val is True
