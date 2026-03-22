@@ -62,3 +62,14 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md — Add native param to Check, propagate native=False for builtins, refactor all 14 builtin check signatures (1/1 complete — 2026-03-22)
 - [ ] 03-02-PLAN.md — Rewrite apply() with native-flag dispatch, remove ibis delegation from __call__, add normalization helper and tests
+
+### Phase 4: Lazy postprocess — always-lazy failure_cases
+
+**Goal:** Make `postprocess_lazyframe_output` fully lazy — `apply()` attaches `CHECK_OUTPUT_KEY` to the full frame via `with_columns` (returning the same lazy type as input), `postprocess_lazyframe_output` builds `passed` and `failure_cases` lazily without materializing `check_obj.frame`, and materialization only happens in `run_check` when evaluating the scalar `passed` boolean. Fixes `failure_cases` being `pyarrow.Table` for ibis builtin checks — it will instead be a narwhals-wrapped lazy ibis Table.
+**Requirements**: LAZY-01, LAZY-02, LAZY-03, LAZY-04, LAZY-05, LAZY-06, LAZY-07, LAZY-08
+**Depends on:** Phase 3
+**Plans:** 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Write failing test stubs + update ibis e2e failure_cases assertions (RED baseline)
+- [ ] 04-02-PLAN.md — Implement wide-table apply(), lazy postprocess_lazyframe_output, extend run_check ibis guard
