@@ -54,10 +54,11 @@ Plans:
 
 ### Phase 3: Fix IbisCheckBackend delegation via apply() type-dispatch
 
-**Goal:** [To be planned]
+**Goal:** Remove IbisCheckBackend delegation from NarwhalsCheckBackend by introducing a native flag on Check that controls what apply() passes to the check function. Unify the calling convention for all checks to check_fn(frame, key). No new user-facing capabilities — purely architectural clean-up.
 **Requirements**: TBD
 **Depends on:** Phase 2
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 3 to break down)
+- [ ] 03-01-PLAN.md — Add native param to Check, propagate native=False for builtins, refactor all 14 builtin check signatures
+- [ ] 03-02-PLAN.md — Rewrite apply() with native-flag dispatch, remove ibis delegation from __call__, add normalization helper and tests
