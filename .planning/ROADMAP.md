@@ -51,3 +51,13 @@ Plans:
 Plans:
 - [ ] 02-01-PLAN.md — checks.py: replace horizontal concat with with_columns, replace polars import in postprocess_bool_output, document IbisCheckBackend delegation
 - [ ] 02-02-PLAN.md — components.py: refactor check_nullable to with_columns, simplify check_dtype to single narwhals-engine pass
+
+### Phase 3: Fix IbisCheckBackend delegation via apply() type-dispatch
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 2
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 3 to break down)
