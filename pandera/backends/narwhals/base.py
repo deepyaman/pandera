@@ -7,7 +7,7 @@ import narwhals.stable.v1 as nw
 import polars as pl
 
 from pandera.api.narwhals.error_handler import ErrorHandler
-from pandera.api.narwhals.utils import _to_native
+from pandera.api.narwhals.utils import _materialize, _to_native
 from pandera.backends.base import BaseSchemaBackend, CoreCheckResult
 from pandera.backends.narwhals.checks import NarwhalsCheckBackend
 from pandera.constants import CHECK_OUTPUT_KEY
@@ -18,14 +18,6 @@ from pandera.errors import (
     SchemaWarning,
 )
 
-
-def _materialize(frame) -> nw.DataFrame:
-    """Materialize a LazyFrame or SQL-lazy DataFrame to a Narwhals DataFrame.
-
-    Delegates to NarwhalsCheckBackend._materialize — single implementation,
-    no duplication. _materialize stays in checks.py per locked design decision.
-    """
-    return NarwhalsCheckBackend._materialize(frame)
 
 
 class NarwhalsSchemaBackend(BaseSchemaBackend):
@@ -148,9 +140,8 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 # Drop CHECK_OUTPUT_KEY column if present (wide table includes it for key=="*" checks)
                 if CHECK_OUTPUT_KEY in fc.collect_schema().names():
                     fc = fc.drop(CHECK_OUTPUT_KEY)
-                # Keep as nw.DataFrame — failure_cases_metadata materializes and converts uniformly.
-                # For polars, fc is nw.LazyFrame (from filter on LazyFrame) — collect to DataFrame.
-                # For ibis, fc is already nw.DataFrame wrapping ibis.Table — keep lazy as-is.
+                # Collect to eager nw.DataFrame — SchemaError.failure_cases is user-visible.
+                # failure_cases_metadata also materializes, but SchemaError is caught directly too.
                 if isinstance(fc, nw.LazyFrame):
                     fc = fc.collect()
                 failure_cases = fc

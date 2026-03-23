@@ -304,13 +304,14 @@ class DataFrameSchemaBackend(NarwhalsSchemaBackend):
     ):
         """Collects all schema components to use for validation."""
 
-        # Determine the Column class from the schema's own module to avoid
-        # hardcoding a polars-specific import in a backend-agnostic method.
-        _schema_module = schema.__class__.__module__
-        if "ibis" in _schema_module:
-            from pandera.api.ibis.components import Column
-        else:
-            from pandera.api.polars.components import Column
+        # Determine the Column class from the schema's own package to avoid
+        # hardcoding a framework-specific import in a backend-agnostic method.
+        # TODO: push synthetic column construction into the schema API layer
+        # (e.g., schema.infer_columns(frame_column_names)) so the backend
+        # doesn't need to know the Column type at all.
+        import importlib
+        _pkg = schema.__class__.__module__.rsplit(".", 1)[0]
+        Column = importlib.import_module(f"{_pkg}.components").Column
 
         columns: dict[str, Column] = schema.columns
         frame_column_names = check_obj.collect_schema().names()

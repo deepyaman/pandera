@@ -8,6 +8,7 @@ import narwhals.stable.v1 as nw
 from pandera.api.base.checks import CheckResult
 from pandera.api.checks import Check
 from pandera.api.narwhals.types import NarwhalsData
+from pandera.api.narwhals.utils import _materialize
 from pandera.backends.base import BaseCheckBackend
 from pandera.constants import CHECK_OUTPUT_KEY
 
@@ -124,7 +125,7 @@ class NarwhalsCheckBackend(BaseCheckBackend):
             return nw.from_native(wide_native, eager_or_interchange_only=False)
         except Exception:
             # Fallback: execute out (tiny bool col), attach via ibis memtable join.
-            out_df = native_out.execute() if hasattr(native_out, "execute") else nw.to_native(self._materialize(out))
+            out_df = native_out.execute() if hasattr(native_out, "execute") else nw.to_native(_materialize(out))
             import ibis as _ibis
             bool_tbl = _ibis.memtable(out_df)
             _row_col = "__pandera_row__"
@@ -173,23 +174,6 @@ class NarwhalsCheckBackend(BaseCheckBackend):
             f"output type of check_fn not recognized: {type(check_output)}"
         )
 
-    @staticmethod
-    def _materialize(frame) -> nw.DataFrame:
-        """Materialize a LazyFrame or SQL-lazy DataFrame to a Narwhals DataFrame.
-
-        - nw.LazyFrame (Polars): call .collect()
-        - nw.DataFrame wrapping a SQL-lazy backend (Ibis): call
-          nw.to_native().execute() then wrap with nw.from_native()
-        """
-        if isinstance(frame, nw.LazyFrame):
-            return frame.collect()
-        # SQL-lazy (Ibis, DuckDB): the frame is already a nw.DataFrame but
-        # cannot be collected — execute via the native object instead.
-        native = nw.to_native(frame)
-        if hasattr(native, "execute"):
-            return nw.from_native(native.execute())
-        # Fallback: already an eager DataFrame
-        return frame
 
     def postprocess_lazyframe_output(
         self,
