@@ -11,7 +11,8 @@ from types import SimpleNamespace
 
 from pandera.api.checks import Check
 from pandera.backends.base import CoreCheckResult
-from pandera.errors import SchemaErrorReason
+from pandera.backends.narwhals.base import NarwhalsSchemaBackend
+from pandera.errors import SchemaError, SchemaErrorReason
 
 # ---------------------------------------------------------------------------
 # Guard: import ColumnBackend only if components.py exists (Plan 03-02)
@@ -202,3 +203,124 @@ def test_run_checks(make_narwhals_frame):
     assert len(results) >= 1
     assert all(isinstance(r, CoreCheckResult) for r in results)
     assert results[0].passed is True
+
+
+# ---------------------------------------------------------------------------
+# Phase 6 RED baseline: subsample() lazy-first contracts
+# ---------------------------------------------------------------------------
+
+# Guard: skip ibis-specific tests if ibis is not installed
+try:
+    import ibis as _ibis_mod
+    HAS_IBIS = True
+except ImportError:
+    HAS_IBIS = False
+
+ibis_only = pytest.mark.skipif(not HAS_IBIS, reason="ibis not installed")
+
+
+class TestSubsample:
+    """RED baseline tests for Phase 6 lazy-first subsample() contracts.
+
+    These tests describe the NEW contracts that do not yet hold in the
+    current implementation (subsample() calls _materialize() which returns
+    an eager nw.DataFrame).  They will turn GREEN in Plan 02.
+    """
+
+    def _polars_lazy_frame(self):
+        """Return an nw.LazyFrame backed by polars."""
+        return nw.from_native(
+            pl.LazyFrame({"x": [1, 2, 3, 4, 5]}),
+            eager_or_interchange_only=False,
+        )
+
+    def test_subsample_head_stays_lazy(self):
+        """LAZY-FIRST: subsample(head=2) must return nw.LazyFrame, not nw.DataFrame."""
+        frame = self._polars_lazy_frame()
+        backend = NarwhalsSchemaBackend()
+        result = backend.subsample(frame, head=2)
+        assert isinstance(result, nw.LazyFrame), (
+            f"expected nw.LazyFrame from subsample(head=), got {type(result)}"
+        )
+
+    def test_subsample_tail_stays_lazy(self):
+        """LAZY-FIRST: subsample(tail=2) must return nw.LazyFrame, not nw.DataFrame."""
+        frame = self._polars_lazy_frame()
+        backend = NarwhalsSchemaBackend()
+        result = backend.subsample(frame, tail=2)
+        assert isinstance(result, nw.LazyFrame), (
+            f"expected nw.LazyFrame from subsample(tail=), got {type(result)}"
+        )
+
+    def test_subsample_both_head_and_tail(self):
+        """LAZY-FIRST: subsample(head=2, tail=2) must return nw.LazyFrame."""
+        frame = self._polars_lazy_frame()
+        backend = NarwhalsSchemaBackend()
+        result = backend.subsample(frame, head=2, tail=2)
+        assert isinstance(result, nw.LazyFrame), (
+            f"expected nw.LazyFrame from subsample(head=, tail=), got {type(result)}"
+        )
+
+    @ibis_only
+    def test_subsample_ibis_tail_raises(self):
+        """SQL-lazy backends: subsample(tail=) must raise NotImplementedError."""
+        import pandas as pd
+        ibis_frame = nw.from_native(
+            _ibis_mod.memtable(pd.DataFrame({"x": [1, 2, 3, 4, 5]})),
+            eager_or_interchange_only=False,
+        )
+        backend = NarwhalsSchemaBackend()
+        with pytest.raises(NotImplementedError, match="tail="):
+            backend.subsample(ibis_frame, tail=2)
+
+    def test_subsample_no_params_returns_unchanged(self):
+        """subsample() with no params returns the original frame unchanged."""
+        frame = self._polars_lazy_frame()
+        backend = NarwhalsSchemaBackend()
+        result = backend.subsample(frame)
+        assert result is frame
+
+
+# ---------------------------------------------------------------------------
+# Phase 6 RED baseline: failure_cases_metadata() returns ibis.Table for ibis input
+# ---------------------------------------------------------------------------
+
+
+@ibis_only
+def test_failure_cases_metadata_ibis_returns_ibis_table():
+    """LAZY-FIRST: failure_cases_metadata() must preserve ibis.Table in result.
+
+    Currently RED because the implementation always converts to pl.DataFrame
+    via to_arrow() + pl.from_arrow().  Plan 03 will make this GREEN.
+    """
+    import pandas as pd
+    import ibis
+
+    failure_cases_df = nw.from_native(
+        ibis.memtable(pd.DataFrame({"x": [-1, -3]})),
+        eager_or_interchange_only=False,
+    )
+
+    # Build a schema stub whose __class__.__name__ == "Column" so that
+    # failure_cases_metadata() can use err.schema.__class__.__name__ safely.
+    ColumnStub = type("Column", (), {})
+    schema_stub = ColumnStub()
+    schema_stub.name = "x"
+
+    schema_error = SchemaError(
+        schema=schema_stub,
+        data=None,
+        message="Check failed",
+        failure_cases=failure_cases_df,
+        check=None,
+        check_index=0,
+        check_output=None,
+        reason_code=SchemaErrorReason.DATAFRAME_CHECK,
+    )
+
+    backend = NarwhalsSchemaBackend()
+    result = backend.failure_cases_metadata("test_schema", [schema_error])
+
+    assert isinstance(result.failure_cases, ibis.Table), (
+        f"expected ibis.Table for ibis input, got {type(result.failure_cases)}"
+    )
