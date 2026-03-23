@@ -92,7 +92,7 @@ Plans:
 **Goal:** Enforce a single principle throughout the narwhals backend: execution is triggered only once — to evaluate the scalar boolean "did the check pass?" — and everything else is returned in the user's original type. `failure_cases` and `check_output` must stay as lazy ibis Tables when the input was ibis, as `pl.LazyFrame` when the input was polars lazy, etc. The user calls `nw.to_native()` to unwrap; pandera never calls `.collect()` or `.execute()` on their behalf except for the pass/fail boolean. This collapses the dead `_is_ibis_result` bifurcation in `run_check()`, removes the spurious `fc.collect()` and `_materialize(check_output)` calls, fixes `subsample()` materializing before `.head()`/`.tail()`, and fixes `check_nullable()` materializing the whole frame to evaluate a scalar `.any()`.
 **Requirements**: TBD
 **Depends on:** Phase 5
-**Plans:** 0 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 6 to break down)

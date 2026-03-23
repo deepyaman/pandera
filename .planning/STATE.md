@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 3 of 3
-status: completed
-stopped_at: Phase 6 context gathered
-last_updated: "2026-03-23T14:24:13.826Z"
-last_activity: 2026-03-23 — Plan 05-03 complete (apply() ~30 lines, no ibis-specific code, frame.with_columns(expr.alias(CHECK_OUTPUT_KEY)) uniform across all branches)
+current_plan: 1 of 3
+status: in-progress
+stopped_at: Completed 06-01 RED baseline tests
+last_updated: "2026-03-23T17:51:00Z"
+last_activity: 2026-03-23 — Plan 06-01 complete (9 RED baseline tests for lazy-first failure_cases and subsample() contracts; test_e2e.py updated)
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  total_plans: 16
+  completed_plans: 14
+  percent: 88
 ---
 
 # Project State
@@ -26,10 +26,10 @@ See: .planning/PROJECT.md (updated 2026-03-15 after v1.0 milestone)
 
 ## Current Position
 
-Phase: 05-expression-based-check-protocol-eliminate-framework-specific-apply-branching
-Current Plan: 3 of 3
-Status: Plan 05-03 complete — apply() rewritten with uniform expression protocol, ibis row_number join deleted, all 68 test_checks.py tests GREEN
-Last activity: 2026-03-23 — Plan 05-03 complete (apply() ~30 lines, no ibis-specific code, frame.with_columns(expr.alias(CHECK_OUTPUT_KEY)) uniform across all branches)
+Phase: 06-eliminate-unnecessary-materialization-lazy-first-failure-cases-and-check-output
+Current Plan: 1 of 3
+Status: Plan 06-01 complete — RED baseline tests established; 9 failing tests define Phase 6 lazy-first acceptance criteria
+Last activity: 2026-03-23 — Plan 06-01 complete (9 RED baseline tests for lazy-first failure_cases and subsample() contracts; test_e2e.py updated)
 
 Progress: [██████████] 100%
 
@@ -76,6 +76,9 @@ Phase 03 decisions:
 - [Phase 05-02]: No frame.select() inside any builtin — return expression directly; Dispatcher auto-rekeys to nw.Expr via first-param annotation reflection
 - [Phase 05-03]: element_wise try/except wraps frame.with_columns() call — NotImplementedError fires at evaluation time in narwhals for SQL-lazy backends, not at map_batches construction
 - [Phase 05-03]: _normalize_native_output ir.BooleanColumn uses native.mutate(**{CHECK_OUTPUT_KEY: out}) to produce wide table — native.select() produced 1-column frame that broke postprocess_lazyframe_output's failure_cases.select(key) after removal of old reassembly block
+- [Phase 06-01 RED baseline]: SchemaError.failure_cases Phase 6 contract is native (pl.DataFrame for polars, ibis.Table for ibis) — not nw.DataFrame wrapper; consistent with polars backend behavior
+- [Phase 06-01 RED baseline]: SchemaErrors.failure_cases Phase 6 contract: ibis.Table for ibis inputs — failure_cases_metadata() must not force pl.DataFrame conversion via to_arrow()+pl.from_arrow()
+- [Phase 06-01 RED baseline]: subsample() Phase 6 contract: head= and tail= stay lazy (nw.LazyFrame for polars); ibis tail= raises NotImplementedError matching element_wise pattern
 
 ### Roadmap Evolution
 
@@ -98,6 +101,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-23T14:24:13.823Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-eliminate-unnecessary-materialization-lazy-first-failure-cases-and-check-output/06-CONTEXT.md
+Last session: 2026-03-23T17:51:00Z
+Stopped at: Completed 06-01-PLAN.md
+Resume file: .planning/phases/06-eliminate-unnecessary-materialization-lazy-first-failure-cases-and-check-output/06-01-SUMMARY.md
