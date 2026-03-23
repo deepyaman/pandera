@@ -168,11 +168,22 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 )
             )
 
-            if isinstance(err.failure_cases, (nw.LazyFrame, nw.DataFrame)):
+            # Detect native ibis.Table: SchemaError.failure_cases is now native (Phase 6 contract).
+            # For ibis inputs, failure_cases is ibis.Table (not nw.DataFrame wrapper).
+            # Wrap back to narwhals to reuse the same materialization path below.
+            fc = err.failure_cases
+            try:
+                import ibis as _ibis
+                if isinstance(fc, _ibis.Table):
+                    fc = nw.from_native(fc, eager_or_interchange_only=False)
+            except ImportError:
+                pass
+
+            if isinstance(fc, (nw.LazyFrame, nw.DataFrame)):
                 # Materialize to eager narwhals frame, then convert to polars via Arrow.
                 # to_arrow() + pl.from_arrow() is backend-agnostic: works for polars-backed,
                 # pandas-backed (ibis execute result), or any other narwhals backend.
-                fc_eager = _materialize(err.failure_cases)
+                fc_eager = _materialize(fc)
                 pl_fc = pl.from_arrow(fc_eager.to_arrow())
 
                 # Compute row indices of failing cases from check_output.

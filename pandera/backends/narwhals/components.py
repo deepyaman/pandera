@@ -127,9 +127,10 @@ class ColumnBackend(NarwhalsSchemaBackend):
         # Add null indicator inline — single LazyFrame op, no separate frame materialization.
         combined_lf = check_obj.with_columns(null_expr.alias(CHECK_OUTPUT_KEY))
 
+        # Materialize ONE ROW to evaluate the scalar bool — not the full frame.
         # _materialize handles both nw.LazyFrame (collect) and SQL-lazy DataFrame (execute).
-        combined_df = _materialize(combined_lf)
-        has_nulls = combined_df[CHECK_OUTPUT_KEY].any()
+        has_nulls_df = _materialize(combined_lf.select(nw.col(CHECK_OUTPUT_KEY).any()))
+        has_nulls = bool(has_nulls_df[CHECK_OUTPUT_KEY][0])
 
         if not has_nulls:
             return [
@@ -140,13 +141,12 @@ class ColumnBackend(NarwhalsSchemaBackend):
                 )
             ]
 
-        failure_cases = _to_native(
-            combined_df.filter(nw.col(CHECK_OUTPUT_KEY)).select(col)
-        )
+        # failure_cases and check_output stay lazy — narwhals wrappers, not native.
+        failure_cases = combined_lf.filter(nw.col(CHECK_OUTPUT_KEY)).select(col)
         return [
             CoreCheckResult(
                 passed=False,
-                check_output=combined_df.select(CHECK_OUTPUT_KEY),
+                check_output=combined_lf,
                 check="not_nullable",
                 reason_code=SchemaErrorReason.SERIES_CONTAINS_NULLS,
                 message=f"non-nullable column '{schema.selector}' contains null values",
@@ -327,11 +327,30 @@ class ColumnBackend(NarwhalsSchemaBackend):
                     error = result.schema_error
                 else:
                     assert result.reason_code is not None
+                    # Convert narwhals failure_cases to native for SchemaError public API.
+                    # CoreCheckResult carries narwhals wrappers; SchemaError.failure_cases
+                    # is the public API and must be native (pl.DataFrame, ibis.Table, etc.)
+                    # so callers can use the result without narwhals knowledge.
+                    # For SQL-lazy backends (ibis): nw.to_native(LazyFrame) returns ibis.Table
+                    #   directly (no execution) — hasattr(native, 'execute') detects this case.
+                    # For polars LazyFrame: must collect() first, then to_native → pl.DataFrame.
+                    # For nw.DataFrame: to_native directly (polars → pl.DataFrame, ibis → ibis.Table).
+                    fc = result.failure_cases
+                    if isinstance(fc, nw.LazyFrame):
+                        native_fc = nw.to_native(fc)
+                        if hasattr(native_fc, "execute"):
+                            # SQL-lazy backend (ibis): native is already ibis.Table
+                            fc = native_fc
+                        else:
+                            # Polars lazy: collect to eager then unwrap
+                            fc = nw.to_native(_materialize(fc))
+                    elif isinstance(fc, nw.DataFrame):
+                        fc = nw.to_native(fc)
                     error = SchemaError(
                         schema=schema,
                         data=check_obj,
                         message=result.message,
-                        failure_cases=result.failure_cases,
+                        failure_cases=fc,
                         check=result.check,
                         check_index=result.check_index,
                         check_output=result.check_output,
