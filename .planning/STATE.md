@@ -84,6 +84,7 @@ Phase 03 decisions:
 - Phase 05 added: Expression-based check protocol — eliminate framework-specific apply() branching
 - Phase 02 added: Remaining PR Review Fixes (horizontal concat, postprocess_bool_output polars code, custom checks delegation, check_dtype backend logic)
 - Phase 03 added: Fix IbisCheckBackend delegation (approach TBD at planning time)
+- Phase 06 added: Eliminate unnecessary materialization — lazy-first failure_cases and check_output
 
 ### Pending Todos
 
