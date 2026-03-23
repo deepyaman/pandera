@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 3 of 3
-status: completed
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-23T01:59:39.292Z"
-last_activity: 2026-03-22 — Plan 03-02 complete (apply() rewrite, all 14 builtin checks pass on polars + ibis)
+current_plan: 2 of 3
+status: in-progress
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-23T02:18:00.000Z"
+last_activity: 2026-03-23 — Plan 04-02 complete (wide-table apply(), lazy postprocess_lazyframe_output, all 28 builtin check tests pass)
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 10
-  completed_plans: 8
-  percent: 87
+  completed_plans: 9
+  percent: 90
 ---
 
 # Project State
@@ -26,10 +26,10 @@ See: .planning/PROJECT.md (updated 2026-03-15 after v1.0 milestone)
 
 ## Current Position
 
-Phase: 03-fix-ibischeckbackend-delegation-via-apply-type-dispatch
-Current Plan: 3 of 3
-Status: Plan 03-02 complete — apply() rewritten, IbisCheckBackend delegation removed
-Last activity: 2026-03-22 — Plan 03-02 complete (apply() rewrite, all 14 builtin checks pass on polars + ibis)
+Phase: 04-lazy-postprocess-always-lazy-failure-cases
+Current Plan: 2 of 3
+Status: Plan 04-02 complete — apply() returns wide table, postprocess_lazyframe_output fully lazy
+Last activity: 2026-03-23 — Plan 04-02 complete (wide-table apply(), lazy postprocess, all 28 builtin check tests pass)
 
 Progress: [█████████░] 87%
 
@@ -65,6 +65,9 @@ Phase 03 decisions:
 - [Phase 03]: postprocess_bool_output falls back to polars LazyFrame when nw.from_dict fails for ibis SQL-lazy backends
 - [Phase 04-lazy-postprocess-always-lazy-failure-cases]: xfail(strict=False) used for polars postprocess stubs because polars path already returns nw.DataFrame from _materialize(); ibis path is the real bug target
 - [Phase 04-lazy-postprocess-always-lazy-failure-cases]: TestBuiltinChecksPolars failure_cases assertions updated to nw.DataFrame alongside ibis — both must be RED before Phase 4 removes _to_native
+- [Phase 04-02]: ibis wide-table via row_number join — narwhals cannot pass a Series from one ibis relation into with_columns of another; native ibis row_number().over(window()) join is the correct approach
+- [Phase 04-02]: Backend detection via hasattr(nw.to_native(out), 'execute') — polars pl.LazyFrame has no .execute(); ibis.Table does — cleanly separates the two paths
+- [Phase 04-02]: element_wise .select(selector) kept — plan said to drop it but removing would feed non-bool data columns through all_horizontal; narrow extraction before wide-table re-attachment is necessary
 
 ### Roadmap Evolution
 
@@ -85,6 +88,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-23T01:59:39.290Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-03-23T02:18:00.000Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None

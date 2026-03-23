@@ -26,7 +26,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 | 1. Foundation | v1.0 | 2/2 | Complete | 2026-03-09 |
 | 2. Check Backend | 1/2 | In Progress|  | 2026-03-10 |
 | 3. Column Backend | 2/2 | Complete   | 2026-03-22 | 2026-03-14 |
-| 4. Container Backend and Polars Registration | 1/3 | In Progress|  | 2026-03-14 |
+| 4. Container Backend and Polars Registration | 2/3 | In Progress|  | 2026-03-14 |
 | 5. Ibis Registration and Integration | v1.0 | 6/6 | Complete | 2026-03-15 |
 
 ### Phase 1: PR Review Architecture Fixes
@@ -68,7 +68,7 @@ Plans:
 **Goal:** Make `postprocess_lazyframe_output` fully lazy — `apply()` attaches `CHECK_OUTPUT_KEY` to the full frame via `with_columns` (returning the same lazy type as input), `postprocess_lazyframe_output` builds `passed` and `failure_cases` lazily without materializing `check_obj.frame`, and materialization only happens in `run_check` when evaluating the scalar `passed` boolean. Fixes `failure_cases` being `pyarrow.Table` for ibis builtin checks — it will instead be a narwhals-wrapped lazy ibis Table.
 **Requirements**: LAZY-01, LAZY-02, LAZY-03, LAZY-04, LAZY-05, LAZY-06, LAZY-07, LAZY-08
 **Depends on:** Phase 3
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 04-01-PLAN.md — Write failing test stubs + update ibis e2e failure_cases assertions (RED baseline)
