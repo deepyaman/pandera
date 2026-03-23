@@ -144,15 +144,13 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                     f"Check '{check}' failed — no failure cases captured."
                 )
             else:
-                fc = _materialize(check_result.failure_cases)
-                # Drop CHECK_OUTPUT_KEY column if present
+                fc = check_result.failure_cases
+                # Drop CHECK_OUTPUT_KEY column if present (wide table includes it for key=="*" checks)
                 if CHECK_OUTPUT_KEY in fc.collect_schema().names():
                     fc = fc.drop(CHECK_OUTPUT_KEY)
-                failure_cases = _to_native(fc)
-                message = (
-                    f"Check '{check}' failed. "
-                    f"Failure cases: {fc.head().rows(named=True)}"
-                )
+                # Materialize to eager nw.DataFrame — failure_cases_metadata converts uniformly.
+                failure_cases = _materialize(fc)
+                message = f"Check '{check}' failed."
 
             if check.raise_warning:
                 warnings.warn(message, SchemaWarning)
