@@ -85,10 +85,10 @@ class NarwhalsCheckBackend(BaseCheckBackend):
             if isinstance(out, ir.BooleanScalar):
                 return bool(out.execute())
             elif isinstance(out, ir.BooleanColumn):
-                # Promote to a one-column ibis Table then wrap with narwhals.
-                # Use the native table from check_obj to host the column expression.
+                # Attach the boolean column expression to the original table,
+                # producing a wide table (original columns + CHECK_OUTPUT_KEY).
                 native = nw.to_native(check_obj.frame)
-                tbl = native.select(out.name(CHECK_OUTPUT_KEY))
+                tbl = native.mutate(**{CHECK_OUTPUT_KEY: out})
                 return nw.from_native(tbl, eager_or_interchange_only=False)
             elif isinstance(out, ibis.Table):
                 return nw.from_native(out, eager_or_interchange_only=False)
