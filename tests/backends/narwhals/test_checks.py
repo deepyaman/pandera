@@ -217,7 +217,7 @@ def test_builtin_checks_pass(
     backend = NarwhalsCheckBackend(check)
     result = backend(frame, key=col)
 
-    # check_passed may be a LazyFrame, DataFrame, or bool
+    # check_passed may be a LazyFrame, DataFrame (pandas or SQL-lazy), or bool
     import narwhals.stable.v1 as nw
     from pandera.constants import CHECK_OUTPUT_KEY
     passed = result.check_passed
@@ -225,7 +225,12 @@ def test_builtin_checks_pass(
         collected = passed.collect()
         val = collected[CHECK_OUTPUT_KEY][0]
     elif isinstance(passed, nw.DataFrame):
-        val = passed[CHECK_OUTPUT_KEY][0]
+        # SQL-lazy backends (ibis) wrap an interchange DataFrame — execute natively.
+        native = nw.to_native(passed)
+        if hasattr(native, "execute"):
+            val = native.execute()[CHECK_OUTPUT_KEY].iloc[0]
+        else:
+            val = passed[CHECK_OUTPUT_KEY][0]
     else:
         val = bool(passed)
     assert val == True  # noqa: E712
@@ -255,6 +260,7 @@ def test_builtin_checks_fail(
     backend = NarwhalsCheckBackend(check)
     result = backend(frame, key=col)
 
+    # check_passed may be a LazyFrame, DataFrame (pandas or SQL-lazy), or bool
     import narwhals.stable.v1 as nw
     from pandera.constants import CHECK_OUTPUT_KEY
     passed = result.check_passed
@@ -262,7 +268,12 @@ def test_builtin_checks_fail(
         collected = passed.collect()
         val = collected[CHECK_OUTPUT_KEY][0]
     elif isinstance(passed, nw.DataFrame):
-        val = passed[CHECK_OUTPUT_KEY][0]
+        # SQL-lazy backends (ibis) wrap an interchange DataFrame — execute natively.
+        native = nw.to_native(passed)
+        if hasattr(native, "execute"):
+            val = native.execute()[CHECK_OUTPUT_KEY].iloc[0]
+        else:
+            val = passed[CHECK_OUTPUT_KEY][0]
     else:
         val = bool(passed)
     assert val == False  # noqa: E712

@@ -95,7 +95,50 @@ class NarwhalsCheckBackend(BaseCheckBackend):
         else:
             out = out.rename({col_names[0]: CHECK_OUTPUT_KEY})
 
-        return out
+        # Return wide table: original frame + CHECK_OUTPUT_KEY column.
+        # out is a 1-column frame named CHECK_OUTPUT_KEY (LazyFrame or DataFrame).
+        # Detect backend: ibis nw.LazyFrame and nw.DataFrame both have native type with
+        # .execute(); polars nw.LazyFrame has native pl.LazyFrame without .execute().
+        native_out = nw.to_native(out)
+        if not hasattr(native_out, "execute"):
+            # Polars path: collect 1-col bool result (tiny) and attach as Series.
+            # check_obj.frame stays as LazyFrame throughout.
+            return check_obj.frame.with_columns(out.collect()[CHECK_OUTPUT_KEY])
+        # SQL-lazy path (ibis): narwhals cannot pass a Series from one ibis relation
+        # into with_columns of another. Use a row_number join via the native ibis API
+        # to attach the bool column while keeping the result as a lazy ibis Table.
+        native_frame = nw.to_native(check_obj.frame)
+        try:
+            import ibis as _ibis
+            _row_col = "__pandera_row__"
+            idx_frame = native_frame.mutate(
+                **{_row_col: _ibis.row_number().over(_ibis.window())}
+            )
+            idx_out = native_out.mutate(
+                **{_row_col: _ibis.row_number().over(_ibis.window())}
+            )
+            combined = idx_frame.join(
+                idx_out, idx_frame[_row_col] == idx_out[_row_col]
+            )
+            wide_native = combined.select(*native_frame.columns, CHECK_OUTPUT_KEY)
+            return nw.from_native(wide_native, eager_or_interchange_only=False)
+        except Exception:
+            # Fallback: execute out (tiny bool col), attach via ibis memtable join.
+            out_df = native_out.execute() if hasattr(native_out, "execute") else nw.to_native(self._materialize(out))
+            import ibis as _ibis
+            bool_tbl = _ibis.memtable(out_df)
+            _row_col = "__pandera_row__"
+            idx_frame = native_frame.mutate(
+                **{_row_col: _ibis.row_number().over(_ibis.window())}
+            )
+            idx_out = bool_tbl.mutate(
+                **{_row_col: _ibis.row_number().over(_ibis.window())}
+            )
+            combined = idx_frame.join(
+                idx_out, idx_frame[_row_col] == idx_out[_row_col]
+            )
+            wide_native = combined.select(*native_frame.columns, CHECK_OUTPUT_KEY)
+            return nw.from_native(wide_native, eager_or_interchange_only=False)
 
     @staticmethod
     def _normalize_native_output(out, check_obj: NarwhalsData):
@@ -154,17 +197,13 @@ class NarwhalsCheckBackend(BaseCheckBackend):
         check_output,
     ) -> CheckResult:
         """Postprocesses LazyFrame check output into a CheckResult."""
-        # Materialize results so its Series can be passed to with_columns below.
-        # data_df must also be collected to produce an eager combined frame.
-        results_df = self._materialize(check_output)
+        # check_output is the wide table (frame + CHECK_OUTPUT_KEY column). Stay lazy.
         if self.check.ignore_na:
-            results_df = results_df.with_columns(
+            check_output = check_output.with_columns(
                 nw.col(CHECK_OUTPUT_KEY) | nw.col(CHECK_OUTPUT_KEY).is_null()
             )
-        passed = results_df.select(nw.col(CHECK_OUTPUT_KEY).all())
-        data_df = self._materialize(check_obj.frame)
-        combined = data_df.with_columns(results_df[CHECK_OUTPUT_KEY])
-        failure_cases = combined.filter(~nw.col(CHECK_OUTPUT_KEY))
+        passed = check_output.select(nw.col(CHECK_OUTPUT_KEY).all())
+        failure_cases = check_output.filter(~nw.col(CHECK_OUTPUT_KEY))
 
         if check_obj.key != "*":
             failure_cases = failure_cases.select(check_obj.key)
@@ -172,7 +211,7 @@ class NarwhalsCheckBackend(BaseCheckBackend):
             failure_cases = failure_cases.head(self.check.n_failure_cases)
 
         return CheckResult(
-            check_output=results_df,
+            check_output=check_output,
             check_passed=passed,
             checked_object=check_obj,
             failure_cases=failure_cases,
