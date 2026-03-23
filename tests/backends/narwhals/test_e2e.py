@@ -186,9 +186,7 @@ class TestBuiltinChecksPolars:
         assert isinstance(result, pl.DataFrame)
 
     def test_greater_than_fails_failure_cases_type(self):
-        """Builtin check failure → failure_cases is nw.DataFrame (narwhals-wrapped)."""
-        import narwhals.stable.v1 as nw
-
+        """Builtin check failure → failure_cases is pl.DataFrame (native, unwrapped)."""
         schema = pa_pl.DataFrameSchema(
             {"x": pa_pl.Column(int, pa_pl.Check.greater_than(0))}
         )
@@ -196,7 +194,7 @@ class TestBuiltinChecksPolars:
             schema.validate(pl.DataFrame({"x": [-1, 2, -3]}))
 
         fc = exc_info.value.failure_cases
-        assert isinstance(fc, nw.DataFrame), f"expected nw.DataFrame, got {type(fc)}"
+        assert isinstance(fc, pl.DataFrame), f"expected pl.DataFrame, got {type(fc)}"
 
     def test_greater_than_fails_failure_cases_values(self):
         """failure_cases contains only the failing values, not the passing ones."""
@@ -259,9 +257,7 @@ class TestBuiltinChecksIbis:
         assert isinstance(result, ibis.Table)
 
     def test_greater_than_fails_failure_cases_type(self):
-        """Ibis builtin check failure → failure_cases is nw.DataFrame wrapping ibis.Table."""
-        import narwhals.stable.v1 as nw
-
+        """Ibis builtin check failure → failure_cases is ibis.Table (native, unwrapped)."""
         schema = pa_ibis.DataFrameSchema(
             {"x": pa_ibis.Column(dt.int64, pa_ibis.Check.greater_than(0))}
         )
@@ -269,15 +265,12 @@ class TestBuiltinChecksIbis:
             schema.validate(ibis.memtable({"x": [-1, 2, -3]}))
 
         fc = exc_info.value.failure_cases
-        assert isinstance(fc, nw.DataFrame), f"expected nw.DataFrame, got {type(fc)}"
-        assert isinstance(nw.to_native(fc), ibis.Table), (
-            f"expected native ibis.Table, got {type(nw.to_native(fc))}"
+        assert isinstance(fc, ibis.Table), (
+            f"expected native ibis.Table, got {type(fc)}"
         )
 
     def test_greater_than_fails_failure_cases_values(self):
-        """Ibis failure_cases — nw.to_native(fc).execute() returns only failing rows."""
-        import narwhals.stable.v1 as nw
-
+        """Ibis failure_cases — fc.execute() returns only failing rows (fc is native ibis.Table)."""
         schema = pa_ibis.DataFrameSchema(
             {"x": pa_ibis.Column(dt.int64, pa_ibis.Check.greater_than(0))}
         )
@@ -285,7 +278,7 @@ class TestBuiltinChecksIbis:
             schema.validate(ibis.memtable({"x": [-1, 2, -3]}))
 
         fc = exc_info.value.failure_cases
-        failing = nw.to_native(fc).execute()["x"].tolist()
+        failing = fc.execute()["x"].tolist()
         assert set(failing) == {-1, -3}
         assert 2 not in failing
 
@@ -630,8 +623,8 @@ class TestLazyValidationIbis:
 
         assert len(exc_info.value.schema_errors) >= 2
 
-    def test_ibis_lazy_failure_cases_is_dataframe(self):
-        """SchemaErrors.failure_cases is a pl.DataFrame even for ibis inputs."""
+    def test_ibis_lazy_failure_cases_is_ibis_table(self):
+        """SchemaErrors.failure_cases is an ibis.Table for ibis inputs (lazy-first)."""
         schema = pa_ibis.DataFrameSchema(
             {"x": pa_ibis.Column(dt.int64, pa_ibis.Check.greater_than(0))}
         )
@@ -639,7 +632,7 @@ class TestLazyValidationIbis:
             schema.validate(ibis.memtable({"x": [-1, -2, 3]}), lazy=True)
 
         fc = exc_info.value.failure_cases
-        assert isinstance(fc, pl.DataFrame), (
-            "SchemaErrors.failure_cases should be pl.DataFrame (materialized from ibis), "
+        assert isinstance(fc, ibis.Table), (
+            "SchemaErrors.failure_cases should be ibis.Table for ibis inputs, "
             f"got {type(fc)}"
         )
