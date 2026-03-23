@@ -373,14 +373,14 @@ def test_native_true_user_check_ibis(make_narwhals_frame):
 
 
 def test_native_false_user_check(make_narwhals_frame):
-    """native=False check receives narwhals-wrapped frame and key."""
+    """native=False check receives nw.col(key) expression for column checks."""
     import narwhals.stable.v1 as nw
 
     received = []
 
-    def user_check(frame, key):
-        received.append((frame, key))
-        return frame.select(nw.col(key) > 0)
+    def user_check(col_expr):
+        received.append(col_expr)
+        return col_expr > 0
 
     check = Check(user_check, native=False)
     lf = make_narwhals_frame({"x": [1, 2, 3]})
@@ -390,9 +390,9 @@ def test_native_false_user_check(make_narwhals_frame):
     result = backend(lf, key="x")
 
     assert len(received) == 1
-    frame_received, key_received = received[0]
-    assert isinstance(frame_received, (nw.LazyFrame, nw.DataFrame))
-    assert key_received == "x"
+    col_expr_received = received[0]
+    # native=False user check receives nw.col(key) expression, not frame+key
+    assert isinstance(col_expr_received, nw.Expr)
 
 
 def test_ibis_boolean_scalar_normalization(make_narwhals_frame):
