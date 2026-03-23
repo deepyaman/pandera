@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 3 of 3
-status: completed
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-03-23T06:06:56.788Z"
-last_activity: 2026-03-23 — Plan 05-01 complete (test_builtin_check_routing + test_native_false_user_check RED baseline, 4 FAILED x 2 backends, 64 passing)
+current_plan: 2 of 3
+status: in-progress
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-23T06:10:50Z"
+last_activity: 2026-03-23 — Plan 05-02 complete (all 14 builtins rewritten to nw.Expr protocol, Dispatcher keyed on nw.Expr)
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 13
-  completed_plans: 11
-  percent: 85
+  completed_plans: 12
+  percent: 92
 ---
 
 # Project State
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-03-15 after v1.0 milestone)
 ## Current Position
 
 Phase: 05-expression-based-check-protocol-eliminate-framework-specific-apply-branching
-Current Plan: 1 of 3
-Status: Plan 05-01 complete — RED baseline tests asserting nw.Expr dispatch for builtin checks and native=False user checks
-Last activity: 2026-03-23 — Plan 05-01 complete (test_builtin_check_routing + test_native_false_user_check RED baseline, 4 FAILED x 2 backends, 64 passing)
+Current Plan: 2 of 3
+Status: Plan 05-02 complete — all 14 builtin check functions rewritten to nw.Expr protocol, Dispatcher keyed on nw.Expr
+Last activity: 2026-03-23 — Plan 05-02 complete (all 14 builtins accept col_expr: nw.Expr, return nw.Expr, no frame.select(); Dispatcher keyed on nw.Expr)
 
 Progress: [█████████░] 85%
 
@@ -72,6 +72,8 @@ Phase 03 decisions:
 - [Phase 04-03]: to_arrow() + pl.from_arrow() in failure_cases_metadata is backend-agnostic: _materialize produces eager nw.DataFrame, to_arrow extracts Arrow, pl.from_arrow converts to polars — zero ibis/pyarrow isinstance needed
 - [Phase 04-03]: NarwhalsErrorHandler._count_failure_cases extended to handle nw.DataFrame wrapping ibis.Table (nw.to_native → ibis.Table.count().to_pyarrow().as_py())
 - [Phase 05]: Use _function_registry.get(nw.Expr) in RED baseline test to avoid KeyError before migration — test FAILs at assertion, not ERRORs at setup
+- [Phase 05-02]: Transitional state accepted — apply() still calls fn(frame, key) causing KeyError until Plan 05-03 rewires apply() to use nw.Expr protocol
+- [Phase 05-02]: No frame.select() inside any builtin — return expression directly; Dispatcher auto-rekeys to nw.Expr via first-param annotation reflection
 
 ### Roadmap Evolution
 
@@ -93,6 +95,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-23T06:06:56.785Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-03-23T06:10:50Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
