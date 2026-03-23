@@ -194,12 +194,9 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
     ) -> FailureCaseMetadata:
         """Create failure cases metadata required for SchemaErrors exception.
 
-        Ported from PolarsSchemaBackend.failure_cases_metadata(). By the time
-        failure_cases reach this method they are already native (pl.DataFrame
-        or scalar) — _to_native() was called at construction sites.
-
-        Note: pl.LazyFrame failure_cases are not supported (Phase 4 Polars-only
-        limitation).
+        Ported from PolarsSchemaBackend.failure_cases_metadata(). failure_cases
+        may be nw.DataFrame (lazy narwhals frame from run_check) or a scalar.
+        This method materializes and converts to polars internally.
         """
         error_counts: dict[str, int] = defaultdict(int)
         failure_case_collection = []
@@ -225,113 +222,29 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 )
             )
 
-            # Detect ibis-originated failure cases.
-            # After Plan 05-04, ibis check results may carry failure_cases as:
-            #   - ibis.Table (lazy ibis expression — from the ibis path in run_check)
-            #   - pyarrow.lib.Table (materialized — from Narwhals collect() on ibis-backed frame)
-            # Both must be handled before the scalar else branch to avoid Object-dtype in pl.concat.
-            _ibis_fc = None
-            try:
-                import ibis as _ibis_mod
-                if isinstance(err.failure_cases, _ibis_mod.Table):
-                    _ibis_fc = err.failure_cases
-            except ImportError:
-                pass
-            if _ibis_fc is None:
-                try:
-                    import pyarrow as _pa
-                    if isinstance(err.failure_cases, _pa.Table):
-                        # pyarrow.Table is also ibis-originated; tag for ibis branch below
-                        _ibis_fc = err.failure_cases
-                except ImportError:
-                    pass
+            if isinstance(err.failure_cases, (nw.LazyFrame, nw.DataFrame)):
+                # Materialize to eager narwhals frame, then convert to polars via Arrow.
+                # to_arrow() + pl.from_arrow() is backend-agnostic: works for polars-backed,
+                # pandas-backed (ibis execute result), or any other narwhals backend.
+                fc_eager = _materialize(err.failure_cases)
+                pl_fc = pl.from_arrow(fc_eager.to_arrow())
 
-            if isinstance(err.failure_cases, pl.LazyFrame):
-                raise NotImplementedError
-
-            if isinstance(err.failure_cases, pl.DataFrame):
-                failure_cases_df = err.failure_cases
-
-                # get row number of the failure cases
+                # Compute row indices of failing cases from check_output.
                 if err.check_output is not None:
-                    if hasattr(err.check_output, "with_row_index"):
-                        _index_lf = err.check_output.with_row_index("index")
-                    else:
-                        _index_lf = err.check_output.with_row_count("index")
-                    index = _index_lf.filter(
-                        pl.col(CHECK_OUTPUT_KEY).eq(False)
-                    )["index"]
-                else:
-                    index = pl.Series("index", [None] * len(failure_cases_df), dtype=pl.Int32)
-
-                if len(err.failure_cases.columns) > 1:
-                    # for boolean dataframe check results, reduce failure cases
-                    # to a struct column
-                    failure_cases_df = err.failure_cases.with_columns(
-                        failure_case=pl.Series(
-                            err.failure_cases.rows(named=True)
-                        )
-                    ).select(pl.col.failure_case.struct.json_encode())
-                else:
-                    failure_cases_df = err.failure_cases.rename(
-                        {err.failure_cases.columns[0]: "failure_case"}
-                    )
-
-                failure_cases_df = failure_cases_df.with_columns(
-                    schema_context=pl.lit(err.schema.__class__.__name__),
-                    column=pl.lit(err.schema.name),
-                    check=pl.lit(check_identifier),
-                    check_number=pl.lit(err.check_index),
-                    index=index.limit(failure_cases_df.shape[0]),
-                ).cast(
-                    {
-                        "failure_case": pl.Utf8,
-                        "column": pl.String,
-                        "index": pl.Int32,
-                        "check_number": pl.Int32,
-                    }
-                )
-
-            elif _ibis_fc is not None:
-                # Ibis path: materialize ibis.Table or pyarrow.Table to pandas,
-                # then convert to pl.DataFrame following the pl.DataFrame branch structure.
-                if hasattr(_ibis_fc, "execute"):
-                    # ibis.Table — execute() materializes to pandas
-                    pd_fc = _ibis_fc.execute()
-                else:
-                    # pyarrow.Table — to_pandas() materializes directly
-                    pd_fc = _ibis_fc.to_pandas()
-                pl_fc = pl.from_pandas(pd_fc)
-
-                # Compute index from check_output (may also be an ibis.Table)
-                if err.check_output is not None:
+                    co = err.check_output
+                    if not isinstance(co, (nw.LazyFrame, nw.DataFrame)):
+                        co = nw.from_native(co, eager_or_interchange_only=False)
+                    co_eager = _materialize(co)
                     try:
-                        import ibis as _ibis_co
-                        if isinstance(err.check_output, _ibis_co.Table):
-                            check_output_pd = err.check_output.execute()
-                            index = pl.Series(
-                                "index",
-                                [
-                                    i
-                                    for i, v in enumerate(
-                                        check_output_pd[CHECK_OUTPUT_KEY]
-                                    )
-                                    if not v
-                                ],
-                                dtype=pl.Int32,
-                            )
-                        else:
-                            index = pl.Series(
-                                "index", [None] * len(pl_fc), dtype=pl.Int32
-                            )
+                        co_indexed = co_eager.with_row_index("index")
                     except Exception:
-                        index = pl.Series(
-                            "index", [None] * len(pl_fc), dtype=pl.Int32
-                        )
+                        co_indexed = co_eager.with_row_count("index")
+                    failing_indices = co_indexed.filter(
+                        ~nw.col(CHECK_OUTPUT_KEY)
+                    )["index"].to_list()
+                    index = pl.Series("index", failing_indices, dtype=pl.Int32)
                 else:
-                    index = pl.Series(
-                        "index", [None] * len(pl_fc), dtype=pl.Int32
-                    )
+                    index = pl.Series("index", [None] * len(pl_fc), dtype=pl.Int32)
 
                 if len(pl_fc.columns) > 1:
                     failure_cases_df = pl_fc.with_columns(

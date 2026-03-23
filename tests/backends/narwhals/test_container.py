@@ -189,12 +189,18 @@ def test_narwhals_auto_activated_when_installed():
 
 
 # ---------------------------------------------------------------------------
-# TEST-03: SchemaError.failure_cases is native pl.DataFrame
+# TEST-03: SchemaError.failure_cases is nw.DataFrame (Phase 4+)
 # ---------------------------------------------------------------------------
 
 
 def test_failure_cases_is_native():
-    """SchemaError.failure_cases is a native pl.DataFrame, not nw.DataFrame."""
+    """SchemaError.failure_cases is a nw.DataFrame wrapping the backend frame.
+
+    After Phase 4 (04-03), failure_cases is kept as nw.DataFrame instead of
+    unwrapping to native — failure_cases_metadata materializes it uniformly.
+    """
+    import narwhals.stable.v1 as nw
+
     schema = DataFrameSchema(
         columns={"a": Column(pl.Int64, checks=[Check.greater_than(10)])}
     )
@@ -203,8 +209,8 @@ def test_failure_cases_is_native():
         pytest.fail("Expected SchemaError was not raised")
     except SchemaError as err:
         fc = err.failure_cases
-        assert isinstance(fc, pl.DataFrame), (
-            f"failure_cases should be native pl.DataFrame, got {type(fc)}"
+        assert isinstance(fc, nw.DataFrame), (
+            f"failure_cases should be nw.DataFrame (Phase 4+), got {type(fc)}"
         )
 
 

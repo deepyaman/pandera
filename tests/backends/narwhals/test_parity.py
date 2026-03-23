@@ -102,8 +102,12 @@ def test_strict_filter_ibis_drops_extra_columns():
 
 
 def test_failure_cases_native_ibis():
-    """SchemaError.failure_cases on ibis validation is a native (non-narwhals) frame."""
-    import pandas as pd
+    """SchemaError.failure_cases on ibis validation is a nw.DataFrame wrapping ibis.Table.
+
+    After Phase 4 (04-03), failure_cases is kept as nw.DataFrame (wrapping the ibis.Table)
+    instead of being unwrapped to native — failure_cases_metadata materializes uniformly.
+    """
+    import ibis
     from pandera.api.ibis.container import DataFrameSchema as IbisSchema
     from pandera.api.ibis.components import Column as IbisColumn
     import ibis.expr.datatypes as dt
@@ -115,20 +119,12 @@ def test_failure_cases_native_ibis():
         pytest.fail("Expected SchemaError was not raised")
     except SchemaError as err:
         fc = err.failure_cases
-        # Must NOT be a narwhals wrapper
-        assert not isinstance(fc, (nw.DataFrame, nw.LazyFrame)), (
-            f"failure_cases must be native, got {type(fc)}"
+        # After Phase 4: failure_cases is nw.DataFrame wrapping ibis.Table (lazy).
+        assert isinstance(fc, nw.DataFrame), (
+            f"failure_cases should be nw.DataFrame (Phase 4+), got {type(fc)}"
         )
-        # Should be a native frame type — ibis DuckDB backend materializes to
-        # pyarrow when executing via narwhals LazyFrame.collect(); pandas is also
-        # acceptable for ibis backends that execute to pandas.
-        try:
-            import pyarrow as pa
-            native_types = (pd.DataFrame, pl.DataFrame, pa.Table)
-        except ImportError:
-            native_types = (pd.DataFrame, pl.DataFrame)
-        assert isinstance(fc, native_types), (
-            f"Expected native frame (pd.DataFrame, pl.DataFrame, or pyarrow.Table), got {type(fc)}"
+        assert isinstance(nw.to_native(fc), ibis.Table), (
+            f"native should be ibis.Table, got {type(nw.to_native(fc))}"
         )
 
 
