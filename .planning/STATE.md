@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 1 of 3
+current_plan: 2 of 3
 status: in-progress
-stopped_at: Completed 06-01 RED baseline tests
-last_updated: "2026-03-23T17:51:00Z"
-last_activity: 2026-03-23 — Plan 06-01 complete (9 RED baseline tests for lazy-first failure_cases and subsample() contracts; test_e2e.py updated)
+stopped_at: Completed 06-02 lazy-first run_check and check_nullable
+last_updated: "2026-03-23T22:17:52Z"
+last_activity: 2026-03-23 — Plan 06-02 complete (run_check unified, check_nullable scalar-only, SchemaError.failure_cases now native pl.DataFrame/ibis.Table)
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 16
-  completed_plans: 14
-  percent: 88
+  completed_plans: 15
+  percent: 94
 ---
 
 # Project State
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-03-15 after v1.0 milestone)
 ## Current Position
 
 Phase: 06-eliminate-unnecessary-materialization-lazy-first-failure-cases-and-check-output
-Current Plan: 1 of 3
-Status: Plan 06-01 complete — RED baseline tests established; 9 failing tests define Phase 6 lazy-first acceptance criteria
-Last activity: 2026-03-23 — Plan 06-01 complete (9 RED baseline tests for lazy-first failure_cases and subsample() contracts; test_e2e.py updated)
+Current Plan: 2 of 3
+Status: Plan 06-02 complete — run_check unified (no _is_ibis_result), check_nullable scalar-only, SchemaError.failure_cases now native
+Last activity: 2026-03-23 — Plan 06-02 complete (run_check unified, check_nullable scalar-only, SchemaError.failure_cases now native pl.DataFrame/ibis.Table)
 
 Progress: [██████████] 100%
 
@@ -79,6 +79,9 @@ Phase 03 decisions:
 - [Phase 06-01 RED baseline]: SchemaError.failure_cases Phase 6 contract is native (pl.DataFrame for polars, ibis.Table for ibis) — not nw.DataFrame wrapper; consistent with polars backend behavior
 - [Phase 06-01 RED baseline]: SchemaErrors.failure_cases Phase 6 contract: ibis.Table for ibis inputs — failure_cases_metadata() must not force pl.DataFrame conversion via to_arrow()+pl.from_arrow()
 - [Phase 06-01 RED baseline]: subsample() Phase 6 contract: head= and tail= stay lazy (nw.LazyFrame for polars); ibis tail= raises NotImplementedError matching element_wise pattern
+- [Phase 06-02]: ibis nw.LazyFrame failure_cases: nw.to_native(lf) gives ibis.Table without execution — hasattr(native, "execute") detects ibis, skips _materialize() to avoid pyarrow detour
+- [Phase 06-02]: failure_cases_metadata handles native ibis.Table: wrap to nw.from_native() to reuse existing narwhals materialization path — avoids duplicating pl.from_arrow conversion
+- [Phase 06-02]: NarwhalsErrorHandler._count_failure_cases: ibis.Table.count().execute() is the correct count — ibis.Table.__len__() raises ExpressionError
 
 ### Roadmap Evolution
 
@@ -101,6 +104,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-23T17:51:00Z
-Stopped at: Completed 06-01-PLAN.md
-Resume file: .planning/phases/06-eliminate-unnecessary-materialization-lazy-first-failure-cases-and-check-output/06-01-SUMMARY.md
+Last session: 2026-03-23T22:17:52Z
+Stopped at: Completed 06-02-PLAN.md
+Resume file: .planning/phases/06-eliminate-unnecessary-materialization-lazy-first-failure-cases-and-check-output/06-02-SUMMARY.md
