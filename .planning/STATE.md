@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 2 of 3
+current_plan: 3 of 3
 status: in-progress
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-03-23T02:18:00.000Z"
-last_activity: 2026-03-23 — Plan 04-02 complete (wide-table apply(), lazy postprocess_lazyframe_output, all 28 builtin check tests pass)
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-03-23T02:29:00.000Z"
+last_activity: 2026-03-23 — Plan 04-03 complete (narwhals-agnostic run_check failure_cases + single-branch failure_cases_metadata, all builtin ibis and polars tests pass)
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 9
-  percent: 90
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State
@@ -27,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-03-15 after v1.0 milestone)
 ## Current Position
 
 Phase: 04-lazy-postprocess-always-lazy-failure-cases
-Current Plan: 2 of 3
-Status: Plan 04-02 complete — apply() returns wide table, postprocess_lazyframe_output fully lazy
-Last activity: 2026-03-23 — Plan 04-02 complete (wide-table apply(), lazy postprocess, all 28 builtin check tests pass)
+Current Plan: 3 of 3
+Status: Plan 04-03 complete — narwhals-agnostic run_check failure_cases + single-branch failure_cases_metadata
+Last activity: 2026-03-23 — Plan 04-03 complete (failure_cases as nw.DataFrame, failure_cases_metadata zero backend isinstance, TestBuiltinChecksIbis + Polars all GREEN)
 
-Progress: [█████████░] 87%
+Progress: [██████████] 100%
 
 ## Accumulated Context
 
@@ -68,6 +68,9 @@ Phase 03 decisions:
 - [Phase 04-02]: ibis wide-table via row_number join — narwhals cannot pass a Series from one ibis relation into with_columns of another; native ibis row_number().over(window()) join is the correct approach
 - [Phase 04-02]: Backend detection via hasattr(nw.to_native(out), 'execute') — polars pl.LazyFrame has no .execute(); ibis.Table does — cleanly separates the two paths
 - [Phase 04-02]: element_wise .select(selector) kept — plan said to drop it but removing would feed non-bool data columns through all_horizontal; narrow extraction before wide-table re-attachment is necessary
+- [Phase 04-03]: isinstance(fc, nw.LazyFrame) in run_check distinguishes polars (LazyFrame from filter → collect) from ibis (DataFrame wrapping ibis.Table → keep lazy)
+- [Phase 04-03]: to_arrow() + pl.from_arrow() in failure_cases_metadata is backend-agnostic: _materialize produces eager nw.DataFrame, to_arrow extracts Arrow, pl.from_arrow converts to polars — zero ibis/pyarrow isinstance needed
+- [Phase 04-03]: NarwhalsErrorHandler._count_failure_cases extended to handle nw.DataFrame wrapping ibis.Table (nw.to_native → ibis.Table.count().to_pyarrow().as_py())
 
 ### Roadmap Evolution
 
@@ -88,6 +91,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-23T02:18:00.000Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-03-23T02:29:00.000Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
