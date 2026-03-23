@@ -7,7 +7,7 @@ import narwhals.stable.v1 as nw
 import polars as pl
 
 from pandera.api.narwhals.error_handler import ErrorHandler
-from pandera.api.narwhals.utils import _materialize, _to_native
+from pandera.api.narwhals.utils import _materialize
 from pandera.backends.base import BaseSchemaBackend, CoreCheckResult
 from pandera.backends.narwhals.checks import NarwhalsCheckBackend
 from pandera.constants import CHECK_OUTPUT_KEY
@@ -37,11 +37,16 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
     ):
         """Return a (possibly subsampled) version of check_obj.
 
+        Never materializes check_obj — delegates directly to .head()/.tail()
+        so the result stays lazy (nw.LazyFrame) for Polars inputs.
+
         :param head: Number of rows to take from the head.
         :param tail: Number of rows to take from the tail.
         :param sample: Not supported — raises NotImplementedError.
         :param random_state: Ignored (no random sampling supported).
-        :raises NotImplementedError: If sample is not None.
+        :raises NotImplementedError: If sample is not None, or if tail= is
+            requested on a SQL-lazy backend (ibis.Table) that does not support
+            TAIL without forced full ordering.
         """
         if sample is not None:
             raise NotImplementedError(
@@ -49,82 +54,39 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 "Use head= or tail= instead."
             )
 
-        obj_subsample = []
-        if head is not None:
-            obj_subsample.append(_materialize(check_obj).head(head))
-        if tail is not None:
-            obj_subsample.append(_materialize(check_obj).tail(tail))
-
-        if not obj_subsample:
+        if head is None and tail is None:
             return check_obj
 
-        result = nw.concat(obj_subsample).unique()
-        return result
+        # Guard: SQL-lazy backends don't support tail without full ordering
+        if tail is not None:
+            native = nw.to_native(check_obj)
+            if hasattr(native, "execute"):  # ibis.Table has .execute(); pl.LazyFrame does not
+                raise NotImplementedError(
+                    "tail= is not supported on SQL-lazy backends (Ibis, DuckDB, PySpark) "
+                    "because SQL has no native TAIL without forced full ordering. "
+                    "Use head= instead."
+                )
+
+        obj_subsample = []
+        if head is not None:
+            obj_subsample.append(check_obj.head(head))   # lazy — no _materialize()
+        if tail is not None:
+            obj_subsample.append(check_obj.tail(tail))   # lazy — polars-only (guarded above)
+
+        return nw.concat(obj_subsample).unique()
 
     def run_check(self, check_obj, schema, check, check_index, *args):
         """Execute a single Check object and return a CoreCheckResult.
 
-        For Narwhals (Polars) inputs: materializes all frames to native types.
-        For ibis inputs: preserves ibis.Table laziness for failure_cases and
-        check_output — only evaluates the passed boolean via ibis .execute().
+        Single unified code path — no _is_ibis_result bifurcation.
+        Materializes only the scalar passed bool via _materialize(check_passed).
+        failure_cases and check_output stay as narwhals wrappers in the returned
+        CoreCheckResult; callers (failure_cases_metadata) materialize as needed.
         """
         check_result = check(check_obj, *args)
 
-        # Detect ibis check result: IbisCheckBackend returns ibis lazy types
-        # (ibis BooleanScalar for check_passed, ibis.Table for failure_cases).
-        # For ibis, evaluate passed via .execute() and preserve failure_cases as ibis.Table.
-        _is_ibis_result = False
-        try:
-            import ibis as _ibis
-            import ibis.expr.types as _ir
-            if isinstance(
-                check_result.check_passed,
-                (_ir.BooleanScalar, _ir.BooleanColumn),
-            ) or isinstance(check_result.failure_cases, _ibis.Table):
-                _is_ibis_result = True
-        except ImportError:
-            pass
-
-        if _is_ibis_result:
-            # Ibis path: evaluate passed via ibis .execute() (returns Python bool or Series)
-            passed_val = check_result.check_passed.execute()
-            passed = bool(passed_val) if not hasattr(passed_val, '__iter__') else bool(passed_val.all())
-
-            message = None
-            failure_cases = None
-
-            if not passed:
-                if check_result.failure_cases is None:
-                    failure_cases = passed
-                    message = f"Check '{check}' failed — no failure cases captured."
-                else:
-                    # Preserve ibis.Table as-is — tests/ibis/ call .execute()/.to_pandas() on it
-                    failure_cases = check_result.failure_cases
-                    message = f"Check '{check}' failed."
-
-                if check.raise_warning:
-                    warnings.warn(message, SchemaWarning)
-                    return CoreCheckResult(
-                        passed=True,
-                        check=check,
-                        reason_code=SchemaErrorReason.DATAFRAME_CHECK,
-                    )
-
-            # check_output: also ibis.Table — return as-is (ibis backend consumers expect it)
-            check_output = check_result.check_output
-            return CoreCheckResult(
-                passed=passed,
-                check=check,
-                check_index=check_index,
-                check_output=check_output,
-                reason_code=SchemaErrorReason.DATAFRAME_CHECK,
-                message=message,
-                failure_cases=failure_cases,
-            )
-
-        # Narwhals (Polars) path — materialize Narwhals frames to native types
-        passed_df = _materialize(check_result.check_passed)
-        passed = bool(passed_df[CHECK_OUTPUT_KEY][0])
+        passed_lf = check_result.check_passed  # nw.LazyFrame or nw.DataFrame
+        passed = bool(_materialize(passed_lf)[CHECK_OUTPUT_KEY][0])
 
         message = None
         failure_cases = None
@@ -132,19 +94,13 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
         if not passed:
             if check_result.failure_cases is None:
                 failure_cases = passed
-                message = (
-                    f"Check '{check}' failed — no failure cases captured."
-                )
+                message = f"Check '{check}' failed — no failure cases captured."
             else:
                 fc = check_result.failure_cases
                 # Drop CHECK_OUTPUT_KEY column if present (wide table includes it for key=="*" checks)
                 if CHECK_OUTPUT_KEY in fc.collect_schema().names():
                     fc = fc.drop(CHECK_OUTPUT_KEY)
-                # Collect to eager nw.DataFrame — SchemaError.failure_cases is user-visible.
-                # failure_cases_metadata also materializes, but SchemaError is caught directly too.
-                if isinstance(fc, nw.LazyFrame):
-                    fc = fc.collect()
-                failure_cases = fc
+                failure_cases = fc  # narwhals wrapper — NOT collected here
                 message = f"Check '{check}' failed."
 
             if check.raise_warning:
@@ -155,15 +111,14 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                     reason_code=SchemaErrorReason.DATAFRAME_CHECK,
                 )
 
-        check_output_df = _materialize(check_result.check_output)
         return CoreCheckResult(
             passed=passed,
             check=check,
             check_index=check_index,
-            check_output=_to_native(check_output_df),
+            check_output=check_result.check_output,  # stays lazy — NOT _materialize() here
             reason_code=SchemaErrorReason.DATAFRAME_CHECK,
             message=message,
-            failure_cases=failure_cases,
+            failure_cases=failure_cases,             # narwhals wrapper — NOT _to_native() here
         )
 
     def is_float_dtype(self, check_obj, col_name: str) -> bool:
