@@ -77,10 +77,12 @@ Plans:
 
 ### Phase 5: Expression-based check protocol — eliminate framework-specific apply() branching
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Redesign check function protocol so checks return declarative narwhals expressions, enabling `apply()` to use `frame.with_columns(expr.alias(CHECK_OUTPUT_KEY))` uniformly for polars and ibis — eliminating the ibis row_number join hack entirely.
+**Requirements**: EXPR-01, EXPR-02, EXPR-03, EXPR-04, EXPR-05, EXPR-06, EXPR-07
 **Depends on:** Phase 4
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 5 to break down)
+- [ ] 05-01-PLAN.md — Update routing tests to nw.Expr protocol (RED baseline)
+- [ ] 05-02-PLAN.md — Rewrite all 14 builtin checks: nw.Expr in, nw.Expr out (Dispatcher re-keyed)
+- [ ] 05-03-PLAN.md — Rewrite apply() — delete ibis row_number join, Dispatcher workaround, reassembly block
