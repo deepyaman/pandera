@@ -5,8 +5,8 @@ milestone_name: milestone
 current_plan: 3 of 3
 status: completed
 stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-03-23T06:19:11.024Z"
-last_activity: "2026-03-23 — Plan 05-03 complete (apply() uniform expression protocol, ibis row_number join deleted, 68 test_checks.py tests GREEN)"
+last_updated: "2026-03-23T06:25:07.755Z"
+last_activity: 2026-03-23 — Plan 05-03 complete (apply() ~30 lines, no ibis-specific code, frame.with_columns(expr.alias(CHECK_OUTPUT_KEY)) uniform across all branches)
 progress:
   total_phases: 5
   completed_phases: 5
