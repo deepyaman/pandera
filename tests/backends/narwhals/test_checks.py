@@ -134,7 +134,7 @@ BUILTIN_CHECK_CASES = [
 # ---------------------------------------------------------------------------
 
 def test_builtin_check_routing(make_narwhals_frame):
-    """CHECKS-01: builtin check (native=False) receives (nw.LazyFrame/DataFrame, key)."""
+    """CHECKS-01: builtin check receives nw.Expr column expression."""
     import narwhals.stable.v1 as nw
 
     received = []
@@ -143,14 +143,17 @@ def test_builtin_check_routing(make_narwhals_frame):
     from pandera.api.function_dispatch import Dispatcher
     original_dispatcher = Check.equal_to(5)._check_fn
     assert isinstance(original_dispatcher, Dispatcher), "expected Dispatcher"
-    original_fn = original_dispatcher._function_registry[nw.LazyFrame]
+    # After Phase 5, builtins are keyed on nw.Expr; grab original (may be None pre-migration)
+    original_fn = original_dispatcher._function_registry.get(nw.Expr)
 
-    def capturing_fn(frame, key, **kwargs):
-        received.append((frame, key))
-        return original_fn(frame, key, **kwargs)
+    def capturing_fn(col_expr, **kwargs):
+        received.append(col_expr)
+        if original_fn is not None:
+            return original_fn(col_expr, **kwargs)
+        return col_expr == 5  # fallback so postprocess doesn't crash during RED
 
     # Patch the registry so our capturing function runs
-    original_dispatcher._function_registry[nw.LazyFrame] = capturing_fn
+    original_dispatcher._function_registry[nw.Expr] = capturing_fn
     try:
         check = Check.equal_to(5)
         frame = make_narwhals_frame({"x": [5, 5, 5]})
@@ -159,14 +162,16 @@ def test_builtin_check_routing(make_narwhals_frame):
         backend = NarwhalsCheckBackend(check)
         backend(frame, key="x")
     finally:
-        # Restore original function
-        original_dispatcher._function_registry[nw.LazyFrame] = original_fn
+        # Restore original state
+        if original_fn is None:
+            original_dispatcher._function_registry.pop(nw.Expr, None)
+        else:
+            original_dispatcher._function_registry[nw.Expr] = original_fn
 
     assert len(received) == 1
-    frame_received, key_received = received[0]
-    # Builtin receives narwhals frame (LazyFrame or DataFrame), not native
-    assert isinstance(frame_received, (nw.LazyFrame, nw.DataFrame))
-    assert key_received == "x"
+    col_expr_received = received[0]
+    # Builtin receives nw.Expr column expression (not frame+key)
+    assert isinstance(col_expr_received, nw.Expr)
 
 
 def test_user_defined_check_routing(make_narwhals_frame):
