@@ -8,7 +8,6 @@ import narwhals.stable.v1 as nw
 from pandera.api.base.checks import CheckResult
 from pandera.api.checks import Check
 from pandera.api.narwhals.types import NarwhalsData
-from pandera.api.narwhals.utils import _materialize
 from pandera.backends.base import BaseCheckBackend
 from pandera.constants import CHECK_OUTPUT_KEY
 
@@ -41,14 +40,16 @@ class NarwhalsCheckBackend(BaseCheckBackend):
 
     def apply(self, check_obj: NarwhalsData):
         """Apply check function — dispatch on self.check.native flag."""
+        frame = check_obj.frame
+        key = check_obj.key
+
         if self.check.element_wise:
-            selector = nw.col(check_obj.key or "*")
+            selector = nw.col(key or "*")
             try:
-                out = check_obj.frame.with_columns(
-                    selector.map_batches(
-                        self.check_fn, return_dtype=nw.Boolean
-                    )
-                ).select(selector)
+                expr = selector.map_batches(
+                    self.check_fn, return_dtype=nw.Boolean
+                )
+                return frame.with_columns(expr.alias(CHECK_OUTPUT_KEY))
             except NotImplementedError:
                 raise NotImplementedError(
                     "element_wise checks are not supported on SQL-lazy backends "
@@ -56,90 +57,21 @@ class NarwhalsCheckBackend(BaseCheckBackend):
                     "cannot be applied to lazy query plans. "
                     "Use a vectorized check instead."
                 )
+
         elif self.check.native:
             # native=True: unwrap to backend-native type, call (native_frame, key)
-            native_frame = nw.to_native(check_obj.frame)
-            out = self.check_fn(native_frame, check_obj.key)
-            out = self._normalize_native_output(out, check_obj)
+            native_frame = nw.to_native(frame)
+            out = self.check_fn(native_frame, key)
+            return self._normalize_native_output(out, check_obj)
+
         else:
-            # native=False: narwhals frame and key (builtin checks path).
-            # Builtin check_fn is a partial(Dispatcher, **kwargs). Ibis frames
-            # arrive as nw.DataFrame but Dispatcher is keyed on nw.LazyFrame,
-            # so we look up the nw.LazyFrame implementation and re-apply kwargs.
-            from pandera.api.function_dispatch import Dispatcher
-            check_fn = self.check_fn
-            inner_fn = check_fn.func if hasattr(check_fn, "func") else check_fn
-            kwargs = check_fn.keywords if hasattr(check_fn, "keywords") else {}
-            if isinstance(inner_fn, Dispatcher) and not isinstance(
-                check_obj.frame, nw.LazyFrame
-            ):
-                # Retrieve the narwhals-registered implementation directly.
-                narwhals_fn = inner_fn._function_registry.get(nw.LazyFrame)
-                if narwhals_fn is not None:
-                    out = narwhals_fn(check_obj.frame, check_obj.key, **kwargs)
-                else:
-                    out = check_fn(check_obj.frame, check_obj.key)
+            # native=False: expression protocol.
+            # Column check: pass nw.col(key). Frame check (key=="*"): pass frame.
+            if key and key != "*":
+                expr = self.check_fn(nw.col(key))
             else:
-                out = check_fn(check_obj.frame, check_obj.key)
-
-        if isinstance(out, bool):
-            return out
-
-        # Rename single-column output or reduce multi-column to CHECK_OUTPUT_KEY
-        col_names = out.collect_schema().names()
-        if len(col_names) > 1:
-            out = out.select(
-                nw.all_horizontal(*[nw.col(c) for c in col_names]).alias(
-                    CHECK_OUTPUT_KEY
-                )
-            )
-        else:
-            out = out.rename({col_names[0]: CHECK_OUTPUT_KEY})
-
-        # Return wide table: original frame + CHECK_OUTPUT_KEY column.
-        # out is a 1-column frame named CHECK_OUTPUT_KEY (LazyFrame or DataFrame).
-        # Detect backend: ibis nw.LazyFrame and nw.DataFrame both have native type with
-        # .execute(); polars nw.LazyFrame has native pl.LazyFrame without .execute().
-        native_out = nw.to_native(out)
-        if not hasattr(native_out, "execute"):
-            # Polars path: collect 1-col bool result (tiny) and attach as Series.
-            # check_obj.frame stays as LazyFrame throughout.
-            return check_obj.frame.with_columns(out.collect()[CHECK_OUTPUT_KEY])
-        # SQL-lazy path (ibis): narwhals cannot pass a Series from one ibis relation
-        # into with_columns of another. Use a row_number join via the native ibis API
-        # to attach the bool column while keeping the result as a lazy ibis Table.
-        native_frame = nw.to_native(check_obj.frame)
-        try:
-            import ibis as _ibis
-            _row_col = "__pandera_row__"
-            idx_frame = native_frame.mutate(
-                **{_row_col: _ibis.row_number().over(_ibis.window())}
-            )
-            idx_out = native_out.mutate(
-                **{_row_col: _ibis.row_number().over(_ibis.window())}
-            )
-            combined = idx_frame.join(
-                idx_out, idx_frame[_row_col] == idx_out[_row_col]
-            )
-            wide_native = combined.select(*native_frame.columns, CHECK_OUTPUT_KEY)
-            return nw.from_native(wide_native, eager_or_interchange_only=False)
-        except Exception:
-            # Fallback: execute out (tiny bool col), attach via ibis memtable join.
-            out_df = native_out.execute() if hasattr(native_out, "execute") else nw.to_native(_materialize(out))
-            import ibis as _ibis
-            bool_tbl = _ibis.memtable(out_df)
-            _row_col = "__pandera_row__"
-            idx_frame = native_frame.mutate(
-                **{_row_col: _ibis.row_number().over(_ibis.window())}
-            )
-            idx_out = bool_tbl.mutate(
-                **{_row_col: _ibis.row_number().over(_ibis.window())}
-            )
-            combined = idx_frame.join(
-                idx_out, idx_frame[_row_col] == idx_out[_row_col]
-            )
-            wide_native = combined.select(*native_frame.columns, CHECK_OUTPUT_KEY)
-            return nw.from_native(wide_native, eager_or_interchange_only=False)
+                expr = self.check_fn(frame)
+            return frame.with_columns(expr.alias(CHECK_OUTPUT_KEY))
 
     @staticmethod
     def _normalize_native_output(out, check_obj: NarwhalsData):
