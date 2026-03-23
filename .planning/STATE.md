@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_plan: 3 of 3
-status: in-progress
+status: completed
 stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-03-23T02:29:00.000Z"
-last_activity: 2026-03-23 — Plan 04-03 complete (narwhals-agnostic run_check failure_cases + single-branch failure_cases_metadata, all builtin ibis and polars tests pass)
+last_updated: "2026-03-23T02:36:16.046Z"
+last_activity: 2026-03-23 — Plan 04-03 complete (failure_cases as nw.DataFrame, failure_cases_metadata zero backend isinstance, TestBuiltinChecksIbis + Polars all GREEN)
 progress:
   total_phases: 4
   completed_phases: 4
