@@ -410,3 +410,131 @@ def test_ibis_boolean_scalar_normalization(make_narwhals_frame):
     else:
         val = bool(passed)
     assert val is True
+
+
+# ---------------------------------------------------------------------------
+# LAZY-01..08: Phase 4 — wide table apply() and lazy postprocess
+# ---------------------------------------------------------------------------
+
+
+def test_apply_returns_wide_table(make_narwhals_frame):
+    """LAZY-01: apply() returns wide table (data columns + CHECK_OUTPUT_KEY)."""
+    import narwhals.stable.v1 as nw
+    from pandera.backends.narwhals.checks import NarwhalsCheckBackend
+    from pandera.constants import CHECK_OUTPUT_KEY
+
+    check = Check.greater_than(min_value=0)
+    frame = make_narwhals_frame({"x": [1, 2, 3]})
+    backend = NarwhalsCheckBackend(check)
+    result = backend(frame, key="x")
+
+    schema_names = result.check_output.collect_schema().names()
+    assert CHECK_OUTPUT_KEY in schema_names, (
+        f"Expected {CHECK_OUTPUT_KEY!r} in check_output columns, got {schema_names}"
+    )
+    assert "x" in schema_names, (
+        f"Expected 'x' in check_output columns (wide table), got {schema_names}"
+    )
+
+
+@pytest.mark.xfail(strict=False, reason="Phase 4 not yet implemented")
+def test_postprocess_lazyframe_no_materialization_polars(make_narwhals_frame):
+    """LAZY-02: polars failure_cases is nw.DataFrame (not pl.DataFrame) after Phase 4."""
+    import narwhals.stable.v1 as nw
+    from pandera.backends.narwhals.checks import NarwhalsCheckBackend
+
+    frame = make_narwhals_frame({"x": [-1, 2, -3]})
+    native = nw.to_native(frame)
+    if "polars" not in type(native).__module__:
+        pytest.skip("polars-specific test")
+
+    check = Check.greater_than(min_value=0)
+    backend = NarwhalsCheckBackend(check)
+    result = backend(frame, key="x")
+
+    # After Phase 4: failure_cases stays as nw.DataFrame (narwhals-wrapped), not pl.DataFrame
+    assert isinstance(result.failure_cases, nw.DataFrame), (
+        f"expected nw.DataFrame, got {type(result.failure_cases)}"
+    )
+
+
+@pytest.mark.xfail(strict=False, reason="Phase 4 not yet implemented")
+def test_postprocess_lazyframe_no_materialization_ibis(make_narwhals_frame):
+    """LAZY-03: ibis failure_cases is nw.DataFrame wrapping ibis.Table after Phase 4."""
+    ibis_mod = pytest.importorskip("ibis")
+    import narwhals.stable.v1 as nw
+    from pandera.backends.narwhals.checks import NarwhalsCheckBackend
+
+    frame = make_narwhals_frame({"x": [-1, 2, -3]})
+    native = nw.to_native(frame)
+    if not isinstance(native, ibis_mod.Table):
+        pytest.skip("ibis-specific test")
+
+    check = Check.greater_than(min_value=0)
+    backend = NarwhalsCheckBackend(check)
+    result = backend(frame, key="x")
+
+    # After Phase 4: failure_cases is nw.DataFrame wrapping ibis.Table
+    assert isinstance(result.failure_cases, nw.DataFrame), (
+        f"expected nw.DataFrame, got {type(result.failure_cases)}"
+    )
+    assert isinstance(nw.to_native(result.failure_cases), ibis_mod.Table), (
+        f"expected native ibis.Table, got {type(nw.to_native(result.failure_cases))}"
+    )
+
+
+@pytest.mark.xfail(strict=False, reason="Phase 4 not yet implemented")
+def test_ignore_na_lazy(make_narwhals_frame):
+    """LAZY-07: ignore_na=True treats None as pass in lazy postprocess path."""
+    import narwhals.stable.v1 as nw
+    from pandera.backends.narwhals.checks import NarwhalsCheckBackend
+    from pandera.constants import CHECK_OUTPUT_KEY
+
+    frame = make_narwhals_frame({"x": [1, None, 3]})
+    native = nw.to_native(frame)
+    if "polars" not in type(native).__module__:
+        pytest.skip("polars-specific test (ibis None handling differs)")
+
+    check = Check.greater_than(min_value=0)
+    backend = NarwhalsCheckBackend(check)
+    result = backend(frame, key="x")
+
+    # With ignore_na=True: None is treated as passing, so all rows pass
+    # After Phase 4: check_passed stays lazy (nw.LazyFrame or nw.DataFrame)
+    passed = result.check_passed
+    assert isinstance(passed, (nw.LazyFrame, nw.DataFrame)), (
+        f"expected lazy type, got {type(passed)}"
+    )
+    # Evaluate: should be True (None treated as pass)
+    if isinstance(passed, nw.LazyFrame):
+        val = bool(passed.collect()[CHECK_OUTPUT_KEY][0])
+    else:
+        val = bool(passed[CHECK_OUTPUT_KEY][0])
+    assert val is True, "ignore_na=True: None should be treated as pass"
+    # No failure cases since None was treated as passing
+    assert result.failure_cases is None or len(
+        nw.to_native(result.failure_cases)
+    ) == 0
+
+
+@pytest.mark.xfail(strict=False, reason="Phase 4 not yet implemented")
+def test_n_failure_cases_lazy(make_narwhals_frame):
+    """LAZY-08: n_failure_cases=1 limits failure_cases to 1 row after Phase 4."""
+    import narwhals.stable.v1 as nw
+    from pandera.backends.narwhals.checks import NarwhalsCheckBackend
+
+    frame = make_narwhals_frame({"x": [-1, -2, -3]})
+    native = nw.to_native(frame)
+    if "polars" not in type(native).__module__:
+        pytest.skip("polars-specific test")
+
+    check = Check.greater_than(min_value=0, n_failure_cases=1)
+    backend = NarwhalsCheckBackend(check)
+    result = backend(frame, key="x")
+
+    # After Phase 4: failure_cases is nw.DataFrame, limited to n_failure_cases rows
+    assert result.failure_cases is not None
+    native_fc = nw.to_native(result.failure_cases)
+    assert len(native_fc) == 1, (
+        f"expected 1 failure case (n_failure_cases=1), got {len(native_fc)}"
+    )
