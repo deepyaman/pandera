@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 2 of 3
-status: in-progress
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-03-23T06:10:50Z"
-last_activity: 2026-03-23 — Plan 05-02 complete (all 14 builtins rewritten to nw.Expr protocol, Dispatcher keyed on nw.Expr)
+current_plan: 3 of 3
+status: completed
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-03-23T06:19:11.024Z"
+last_activity: "2026-03-23 — Plan 05-03 complete (apply() uniform expression protocol, ibis row_number join deleted, 68 test_checks.py tests GREEN)"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 13
-  completed_plans: 12
-  percent: 92
+  completed_plans: 13
+  percent: 100
 ---
 
 # Project State
@@ -27,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-03-15 after v1.0 milestone)
 ## Current Position
 
 Phase: 05-expression-based-check-protocol-eliminate-framework-specific-apply-branching
-Current Plan: 2 of 3
-Status: Plan 05-02 complete — all 14 builtin check functions rewritten to nw.Expr protocol, Dispatcher keyed on nw.Expr
-Last activity: 2026-03-23 — Plan 05-02 complete (all 14 builtins accept col_expr: nw.Expr, return nw.Expr, no frame.select(); Dispatcher keyed on nw.Expr)
+Current Plan: 3 of 3
+Status: Plan 05-03 complete — apply() rewritten with uniform expression protocol, ibis row_number join deleted, all 68 test_checks.py tests GREEN
+Last activity: 2026-03-23 — Plan 05-03 complete (apply() ~30 lines, no ibis-specific code, frame.with_columns(expr.alias(CHECK_OUTPUT_KEY)) uniform across all branches)
 
-Progress: [█████████░] 85%
+Progress: [██████████] 100%
 
 ## Accumulated Context
 
@@ -74,6 +74,8 @@ Phase 03 decisions:
 - [Phase 05]: Use _function_registry.get(nw.Expr) in RED baseline test to avoid KeyError before migration — test FAILs at assertion, not ERRORs at setup
 - [Phase 05-02]: Transitional state accepted — apply() still calls fn(frame, key) causing KeyError until Plan 05-03 rewires apply() to use nw.Expr protocol
 - [Phase 05-02]: No frame.select() inside any builtin — return expression directly; Dispatcher auto-rekeys to nw.Expr via first-param annotation reflection
+- [Phase 05-03]: element_wise try/except wraps frame.with_columns() call — NotImplementedError fires at evaluation time in narwhals for SQL-lazy backends, not at map_batches construction
+- [Phase 05-03]: _normalize_native_output ir.BooleanColumn uses native.mutate(**{CHECK_OUTPUT_KEY: out}) to produce wide table — native.select() produced 1-column frame that broke postprocess_lazyframe_output's failure_cases.select(key) after removal of old reassembly block
 
 ### Roadmap Evolution
 
@@ -95,6 +97,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-23T06:10:50Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-03-23T06:19:11.020Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
