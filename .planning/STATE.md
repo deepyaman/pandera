@@ -4,15 +4,15 @@ milestone: v1.0
 milestone_name: milestone
 current_plan: 3 of 3
 status: completed
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-03-23T02:36:16.046Z"
-last_activity: 2026-03-23 — Plan 04-03 complete (failure_cases as nw.DataFrame, failure_cases_metadata zero backend isinstance, TestBuiltinChecksIbis + Polars all GREEN)
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-23T06:06:56.788Z"
+last_activity: 2026-03-23 — Plan 05-01 complete (test_builtin_check_routing + test_native_false_user_check RED baseline, 4 FAILED x 2 backends, 64 passing)
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_plans: 13
+  completed_plans: 11
+  percent: 85
 ---
 
 # Project State
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-03-15 after v1.0 milestone)
 
 ## Current Position
 
-Phase: 04-lazy-postprocess-always-lazy-failure-cases
-Current Plan: 3 of 3
-Status: Plan 04-03 complete — narwhals-agnostic run_check failure_cases + single-branch failure_cases_metadata
-Last activity: 2026-03-23 — Plan 04-03 complete (failure_cases as nw.DataFrame, failure_cases_metadata zero backend isinstance, TestBuiltinChecksIbis + Polars all GREEN)
+Phase: 05-expression-based-check-protocol-eliminate-framework-specific-apply-branching
+Current Plan: 1 of 3
+Status: Plan 05-01 complete — RED baseline tests asserting nw.Expr dispatch for builtin checks and native=False user checks
+Last activity: 2026-03-23 — Plan 05-01 complete (test_builtin_check_routing + test_native_false_user_check RED baseline, 4 FAILED x 2 backends, 64 passing)
 
-Progress: [██████████] 100%
+Progress: [█████████░] 85%
 
 ## Accumulated Context
 
@@ -71,6 +71,7 @@ Phase 03 decisions:
 - [Phase 04-03]: isinstance(fc, nw.LazyFrame) in run_check distinguishes polars (LazyFrame from filter → collect) from ibis (DataFrame wrapping ibis.Table → keep lazy)
 - [Phase 04-03]: to_arrow() + pl.from_arrow() in failure_cases_metadata is backend-agnostic: _materialize produces eager nw.DataFrame, to_arrow extracts Arrow, pl.from_arrow converts to polars — zero ibis/pyarrow isinstance needed
 - [Phase 04-03]: NarwhalsErrorHandler._count_failure_cases extended to handle nw.DataFrame wrapping ibis.Table (nw.to_native → ibis.Table.count().to_pyarrow().as_py())
+- [Phase 05]: Use _function_registry.get(nw.Expr) in RED baseline test to avoid KeyError before migration — test FAILs at assertion, not ERRORs at setup
 
 ### Roadmap Evolution
 
@@ -92,6 +93,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-23T02:29:00.000Z
-Stopped at: Completed 04-03-PLAN.md
+Last session: 2026-03-23T06:06:56.785Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None

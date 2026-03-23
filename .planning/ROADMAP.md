@@ -27,7 +27,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 | 2. Check Backend | 1/2 | In Progress|  | 2026-03-10 |
 | 3. Column Backend | 2/2 | Complete   | 2026-03-22 | 2026-03-14 |
 | 4. Container Backend and Polars Registration | 2/3 | In Progress|  | 2026-03-14 |
-| 5. Ibis Registration and Integration | v1.0 | 6/6 | Complete | 2026-03-15 |
+| 5. Ibis Registration and Integration | 1/3 | In Progress|  | 2026-03-15 |
 
 ### Phase 1: PR Review Architecture Fixes
 
@@ -80,7 +80,7 @@ Plans:
 **Goal:** Redesign check function protocol so checks return declarative narwhals expressions, enabling `apply()` to use `frame.with_columns(expr.alias(CHECK_OUTPUT_KEY))` uniformly for polars and ibis — eliminating the ibis row_number join hack entirely.
 **Requirements**: EXPR-01, EXPR-02, EXPR-03, EXPR-04, EXPR-05, EXPR-06, EXPR-07
 **Depends on:** Phase 4
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] 05-01-PLAN.md — Update routing tests to nw.Expr protocol (RED baseline)
