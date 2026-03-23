@@ -74,3 +74,13 @@ Plans:
 - [x] 04-01-PLAN.md — Write failing test stubs + update ibis e2e failure_cases assertions (RED baseline)
 - [x] 04-02-PLAN.md — Rewrite apply() wide-table + lazy postprocess_lazyframe_output (checks.py only)
 - [x] 04-03-PLAN.md — Remove _to_native from run_check + narwhals-ify failure_cases_metadata (base.py only)
+
+### Phase 5: Expression-based check protocol — eliminate framework-specific apply() branching
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 4
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 5 to break down)
