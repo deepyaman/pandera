@@ -148,8 +148,12 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 # Drop CHECK_OUTPUT_KEY column if present (wide table includes it for key=="*" checks)
                 if CHECK_OUTPUT_KEY in fc.collect_schema().names():
                     fc = fc.drop(CHECK_OUTPUT_KEY)
-                # Materialize to eager nw.DataFrame — failure_cases_metadata converts uniformly.
-                failure_cases = _materialize(fc)
+                # Keep as nw.DataFrame — failure_cases_metadata materializes and converts uniformly.
+                # For polars, fc is nw.LazyFrame (from filter on LazyFrame) — collect to DataFrame.
+                # For ibis, fc is already nw.DataFrame wrapping ibis.Table — keep lazy as-is.
+                if isinstance(fc, nw.LazyFrame):
+                    fc = fc.collect()
+                failure_cases = fc
                 message = f"Check '{check}' failed."
 
             if check.raise_warning:
