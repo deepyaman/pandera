@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_plan: 3 of 3
 status: completed
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-22T17:07:00.477Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-23T01:59:39.292Z"
 last_activity: 2026-03-22 — Plan 03-02 complete (apply() rewrite, all 14 builtin checks pass on polars + ibis)
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 10
+  completed_plans: 8
   percent: 87
 ---
 
@@ -63,6 +63,8 @@ Phase 03 decisions:
 - test_builtin_checks_pass/fail are expected RED after plan 03-01 — plan 03-02 fixes apply() dispatch to call check_fn(frame, key) via native=False path
 - [Phase 03]: Dispatcher used in native=False branch for ibis nw.DataFrame frames: look up nw.LazyFrame impl directly and call with partial kwargs to avoid KeyError
 - [Phase 03]: postprocess_bool_output falls back to polars LazyFrame when nw.from_dict fails for ibis SQL-lazy backends
+- [Phase 04-lazy-postprocess-always-lazy-failure-cases]: xfail(strict=False) used for polars postprocess stubs because polars path already returns nw.DataFrame from _materialize(); ibis path is the real bug target
+- [Phase 04-lazy-postprocess-always-lazy-failure-cases]: TestBuiltinChecksPolars failure_cases assertions updated to nw.DataFrame alongside ibis — both must be RED before Phase 4 removes _to_native
 
 ### Roadmap Evolution
 
@@ -83,6 +85,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-22T17:02:22.269Z
-Stopped at: Completed 03-02-PLAN.md
-Resume file: .planning/phases/03-fix-ibischeckbackend-delegation-via-apply-type-dispatch/03-02-SUMMARY.md
+Last session: 2026-03-23T01:59:39.290Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None
