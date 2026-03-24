@@ -24,10 +24,10 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Foundation | v1.0 | 2/2 | Complete | 2026-03-09 |
-| 2. Check Backend | 1/2 | In Progress|  | 2026-03-10 |
-| 3. Column Backend | 2/2 | Complete   | 2026-03-22 | 2026-03-14 |
-| 4. Container Backend and Polars Registration | 2/3 | In Progress|  | 2026-03-14 |
-| 5. Ibis Registration and Integration | 2/3 | In Progress|  | 2026-03-15 |
+| 2. Check Backend | 2/2 | Complete | | 2026-03-22 |
+| 3. Column Backend | 2/2 | Complete   | | 2026-03-22 |
+| 4. Container Backend and Polars Registration | 3/3 | Complete | | 2026-03-23 |
+| 5. Ibis Registration and Integration | 3/3 | Complete | | 2026-03-23 |
 
 ### Phase 1: PR Review Architecture Fixes
 
@@ -46,11 +46,11 @@ Plans:
 **Goal:** Address the remaining unresolved PR #2223 review comments — redesign horizontal concat in checks/components, remove Polars-specific code from postprocess_bool_output, investigate custom checks Ibis delegation, and fix backend-specific dtype logic in check_dtype.
 **Requirements**: TBD
 **Depends on:** Phase 1
-**Plans:** 1/2 plans executed
+**Plans:** 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — checks.py: replace horizontal concat with with_columns, replace polars import in postprocess_bool_output, document IbisCheckBackend delegation
-- [ ] 02-02-PLAN.md — components.py: refactor check_nullable to with_columns, simplify check_dtype to single narwhals-engine pass
+- [x] 02-01-PLAN.md — checks.py: replace horizontal concat with with_columns, replace polars import in postprocess_bool_output, document IbisCheckBackend delegation
+- [x] 02-02-PLAN.md — components.py: refactor check_nullable to with_columns, simplify check_dtype to single narwhals-engine pass
 
 ### Phase 3: Fix IbisCheckBackend delegation via apply() type-dispatch
 
@@ -61,7 +61,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — Add native param to Check, propagate native=False for builtins, refactor all 14 builtin check signatures (1/1 complete — 2026-03-22)
-- [ ] 03-02-PLAN.md — Rewrite apply() with native-flag dispatch, remove ibis delegation from __call__, add normalization helper and tests
+- [x] 03-02-PLAN.md — Rewrite apply() with native-flag dispatch, remove ibis delegation from __call__, add normalization helper and tests
 
 ### Phase 4: Lazy postprocess — always-lazy failure_cases
 
@@ -80,19 +80,19 @@ Plans:
 **Goal:** Redesign check function protocol so checks return declarative narwhals expressions, enabling `apply()` to use `frame.with_columns(expr.alias(CHECK_OUTPUT_KEY))` uniformly for polars and ibis — eliminating the ibis row_number join hack entirely.
 **Requirements**: EXPR-01, EXPR-02, EXPR-03, EXPR-04, EXPR-05, EXPR-06, EXPR-07
 **Depends on:** Phase 4
-**Plans:** 2/3 plans executed
+**Plans:** 3 plans — completed 2026-03-23
 
 Plans:
-- [ ] 05-01-PLAN.md — Update routing tests to nw.Expr protocol (RED baseline)
-- [ ] 05-02-PLAN.md — Rewrite all 14 builtin checks: nw.Expr in, nw.Expr out (Dispatcher re-keyed)
-- [ ] 05-03-PLAN.md — Rewrite apply() — delete ibis row_number join, Dispatcher workaround, reassembly block
+- [x] 05-01-PLAN.md — Update routing tests to nw.Expr protocol (RED baseline)
+- [x] 05-02-PLAN.md — Rewrite all 14 builtin checks: nw.Expr in, nw.Expr out (Dispatcher re-keyed)
+- [x] 05-03-PLAN.md — Rewrite apply() — delete ibis row_number join, Dispatcher workaround, reassembly block
 
 ### Phase 6: Eliminate unnecessary materialization — lazy-first failure_cases and check_output
 
 **Goal:** Enforce a single principle throughout the narwhals backend: execution is triggered only once — to evaluate the scalar boolean "did the check pass?" — and everything else is returned in the user's original type. `failure_cases` and `check_output` must stay as lazy ibis Tables when the input was ibis, as `pl.LazyFrame` when the input was polars lazy, etc. The user calls `nw.to_native()` to unwrap; pandera never calls `.collect()` or `.execute()` on their behalf except for the pass/fail boolean. This collapses the dead `_is_ibis_result` bifurcation in `run_check()`, removes the spurious `fc.collect()` and `_materialize(check_output)` calls, fixes `subsample()` materializing before `.head()`/`.tail()`, and fixes `check_nullable()` materializing the whole frame to evaluate a scalar `.any()`.
 **Requirements**: TBD
 **Depends on:** Phase 5
-**Plans:** 2/3 plans executed
+**Plans:** 3 plans — completed 2026-03-23
 
 Plans:
 - [x] 06-01-PLAN.md — RED baseline tests: subsample() lazy-first contracts + failure_cases type contracts
@@ -101,11 +101,11 @@ Plans:
 
 ### Phase 7: v1.0 Tech Debt Cleanup
 
-**Goal:** Address all tech debt identified in the v1.0 milestone audit — fix two latent correctness bugs (dead code in `_count_failure_cases`, stale `check_output` handling in `drop_invalid_rows`), update the `Check.native` docstring to reflect the current expression-based API, fix the ibis API rename in `test_custom_check_receives_table_and_key`, promote 5 xpassed tests to strict passing, and mark stale ROADMAP.md plan checkboxes as complete.
+**Goal:** Address all tech debt identified in the v1.0 milestone audit — fix dead code in `_count_failure_cases`, update the `Check.native` docstring to reflect the current expression-based API, fix the ibis API rename in `test_custom_check_receives_table_and_key`, promote 4 xpassed tests to strict passing, delete one hollow test, and mark stale ROADMAP.md plan checkboxes as complete.
 **Requirements:** Tech debt from v1.0 audit
 **Depends on:** Phase 6
-**Plans:** TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — Code correctness: fix `_count_failure_cases` dead branch, fix `drop_invalid_rows` check_output unwrap, fix ibis DatabaseTable→Table rename
-- [ ] 07-02-PLAN.md — Docs & test hygiene: update Check.native docstring, promote xpassed tests, fix stale ROADMAP checkboxes
+- [ ] 07-01-PLAN.md — Code correctness: fix `_count_failure_cases` dead branch, fix ibis DatabaseTable→Table rename
+- [ ] 07-02-PLAN.md — Docs & test hygiene: update Check.native docstring, promote 4 xpassed tests, delete hollow test, fix stale ROADMAP checkboxes
