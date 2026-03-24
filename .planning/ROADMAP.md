@@ -97,4 +97,15 @@ Plans:
 Plans:
 - [x] 06-01-PLAN.md — RED baseline tests: subsample() lazy-first contracts + failure_cases type contracts
 - [x] 06-02-PLAN.md — run_check() unified (no _is_ibis_result), check_nullable() scalar-only, SchemaError.failure_cases native
-- [ ] 06-03-PLAN.md — failure_cases_metadata redesign: ibis.Table in SchemaErrors.failure_cases
+- [x] 06-03-PLAN.md — failure_cases_metadata redesign: ibis.Table in SchemaErrors.failure_cases
+
+### Phase 7: v1.0 Tech Debt Cleanup
+
+**Goal:** Address all tech debt identified in the v1.0 milestone audit — fix two latent correctness bugs (dead code in `_count_failure_cases`, stale `check_output` handling in `drop_invalid_rows`), update the `Check.native` docstring to reflect the current expression-based API, fix the ibis API rename in `test_custom_check_receives_table_and_key`, promote 5 xpassed tests to strict passing, and mark stale ROADMAP.md plan checkboxes as complete.
+**Requirements:** Tech debt from v1.0 audit
+**Depends on:** Phase 6
+**Plans:** TBD
+
+Plans:
+- [ ] 07-01-PLAN.md — Code correctness: fix `_count_failure_cases` dead branch, fix `drop_invalid_rows` check_output unwrap, fix ibis DatabaseTable→Table rename
+- [ ] 07-02-PLAN.md — Docs & test hygiene: update Check.native docstring, promote xpassed tests, fix stale ROADMAP checkboxes
