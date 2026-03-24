@@ -1,10 +1,11 @@
 ---
 phase: 7
 slug: v1-0-tech-debt-cleanup
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-24
+audited: 2026-03-24
 ---
 
 # Phase 7 — Validation Strategy
@@ -38,12 +39,12 @@ created: 2026-03-24
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 07-01-01 | 01 | 1 | code-correctness | integration | `pytest tests/backends/narwhals/ -x -q -k "failure_cases"` | ✅ | ⬜ pending |
-| 07-01-02 | 01 | 1 | ibis-assertion | integration | `pytest tests/backends/narwhals/test_e2e.py -x -k "test_custom_check_receives_table_and_key"` | ✅ | ⬜ pending |
-| 07-02-01 | 02 | 2 | docstring | manual | Visual inspection of `pandera/api/checks.py` lines 86-90 | ✅ | ⬜ pending |
-| 07-02-02 | 02 | 2 | xfail-promotion | unit | `pytest tests/backends/narwhals/test_container.py::test_failure_cases_metadata tests/backends/narwhals/test_container.py::test_ibis_narwhals_auto_activated tests/backends/narwhals/test_container.py::test_ibis_backend_is_narwhals tests/backends/narwhals/test_checks.py::test_postprocess_lazyframe_no_materialization_ibis -x` | ✅ | ⬜ pending |
-| 07-02-03 | 02 | 2 | delete-hollow-test | unit | `pytest tests/backends/narwhals/test_container.py -x -q` | ✅ | ⬜ pending |
-| 07-02-04 | 02 | 2 | roadmap-checkboxes | manual | Visual inspection of `.planning/ROADMAP.md` | ✅ | ⬜ pending |
+| 07-01-01 | 01 | 1 | code-correctness | integration | `pytest tests/backends/narwhals/ -x -q -k "failure_cases"` | ✅ | ✅ green |
+| 07-01-02 | 01 | 1 | ibis-assertion | integration | `pytest tests/backends/narwhals/test_e2e.py -x -k "test_custom_check_receives_table_and_key"` | ✅ | ✅ green |
+| 07-02-01 | 02 | 2 | docstring | manual | Visual inspection of `pandera/api/checks.py` lines 86-90 | ✅ | ✅ green |
+| 07-02-02 | 02 | 2 | xfail-promotion | unit | `pytest tests/backends/narwhals/test_container.py::test_failure_cases_metadata tests/backends/narwhals/test_container.py::test_ibis_narwhals_auto_activated tests/backends/narwhals/test_container.py::test_ibis_backend_is_narwhals tests/backends/narwhals/test_checks.py::test_postprocess_lazyframe_no_materialization_ibis -x` | ✅ | ✅ green |
+| 07-02-03 | 02 | 2 | delete-hollow-test | unit | `pytest tests/backends/narwhals/test_container.py -x -q` | ✅ | ✅ green |
+| 07-02-04 | 02 | 2 | roadmap-checkboxes | manual | Visual inspection of `.planning/ROADMAP.md` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -59,18 +60,30 @@ Existing infrastructure covers all phase requirements.
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| `Check.native` docstring accuracy | docs-hygiene | Documentation — no automated test | Read `pandera/api/checks.py` lines 86-90, verify `nw.Expr`/`nw.col(key)` described, not `(nw_frame, key)` tuple |
-| ROADMAP checkboxes updated | docs-hygiene | Markdown file — no automated test | Inspect `.planning/ROADMAP.md` phases 02, 03, 05, 06 — all plan lines should be `- [x]` |
+| `Check.native` docstring accuracy | docs-hygiene | Documentation — no automated test | `checks.py:86-91` — correctly describes `nw.col(key)` (a `nw.Expr`) as sole argument ✅ |
+| ROADMAP checkboxes updated | docs-hygiene | Markdown file — no automated test | 23 `[x]`, 0 `[ ]` — all phases complete ✅ |
 
 ---
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** ✅ Nyquist-compliant — 205 passed, 8 skipped, 1 xfailed (2026-03-24)
+
+---
+
+## Validation Audit 2026-03-24
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+| Total tasks | 6 |
+| Status | All COVERED ✅ |
