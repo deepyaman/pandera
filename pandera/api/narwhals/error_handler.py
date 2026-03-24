@@ -3,7 +3,6 @@
 import narwhals.stable.v1 as nw
 
 from pandera.api.base.error_handler import ErrorHandler as _ErrorHandler
-from pandera.api.narwhals.utils import _materialize
 
 
 class ErrorHandler(_ErrorHandler):
@@ -11,14 +10,12 @@ class ErrorHandler(_ErrorHandler):
 
     @staticmethod
     def _count_failure_cases(failure_cases) -> int:
-        if isinstance(failure_cases, (nw.LazyFrame, nw.DataFrame)):
-            return len(_materialize(failure_cases.select(nw.len())))
-        # Handle native ibis.Table: SchemaError.failure_cases is now native (Phase 6 contract).
-        # ibis.Table.__len__() raises ExpressionError; use .count().execute() instead.
-        try:
-            import ibis as _ibis
-            if isinstance(failure_cases, _ibis.Table):
-                return int(failure_cases.count().execute())
-        except ImportError:
-            pass
-        return _ErrorHandler._count_failure_cases(failure_cases)
+        # failure_cases is always native at SchemaError boundary (Phase 6 contract).
+        # nw.from_native wraps pl.DataFrame, pl.LazyFrame, and ibis.Table uniformly
+        # without backend-specific isinstance checks.
+        return int(
+            nw.from_native(failure_cases, eager_only=False)
+            .lazy()
+            .select(nw.len())
+            .collect()["len"][0]
+        )
