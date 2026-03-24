@@ -29,7 +29,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 | 4. Lazy postprocess — always-lazy failure_cases | 3/3 | Complete | 2026-03-23 |
 | 5. Expression-based check protocol | 3/3 | Complete | 2026-03-23 |
 | 6. Eliminate unnecessary materialization | 3/3 | Complete | 2026-03-23 |
-| 7. v1.0 Tech Debt Cleanup | 2/2 | Complete | 2026-03-24 |
+| 7. v1.0 Tech Debt Cleanup | 2/2 | Complete   | 2026-03-24 |
 
 ### Phase 1: PR Review Architecture Fixes
 
@@ -106,7 +106,7 @@ Plans:
 **Goal:** Address all tech debt identified in the v1.0 milestone audit — fix dead code in `_count_failure_cases`, update the `Check.native` docstring to reflect the current expression-based API, fix the ibis API rename in `test_custom_check_receives_table_and_key`, promote 4 xpassed tests to strict passing, delete one hollow test, and mark stale ROADMAP.md plan checkboxes as complete.
 **Requirements:** Tech debt from v1.0 audit
 **Depends on:** Phase 6
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 07-01-PLAN.md — Code correctness: fix `_count_failure_cases` dead branch, fix ibis DatabaseTable→Table rename
