@@ -4,11 +4,11 @@ milestone: v1.0
 milestone_name: Tech Debt Cleanup
 current_plan: 2 of 3
 status: completed
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-03-24T19:01:14.462Z"
+stopped_at: Phase 8 context gathered
+last_updated: "2026-03-24T22:10:14.983Z"
 last_activity: 2026-03-23 — Plan 06-02 complete (run_check unified, check_nullable scalar-only, SchemaError.failure_cases now native pl.DataFrame/ibis.Table)
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 7
   total_plans: 18
   completed_plans: 18
@@ -108,6 +108,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-24T14:40:48.865Z
-Stopped at: Completed 07-02-PLAN.md
-Resume file: None
+Last session: 2026-03-24T22:10:14.980Z
+Stopped at: Phase 8 context gathered
+Resume file: .planning/phases/08-fix-lazy-true-critical-regressions/08-CONTEXT.md
