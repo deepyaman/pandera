@@ -21,13 +21,15 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 
 ## Progress
 
-| Phase | Milestone | Plans Complete | Status | Completed |
-|-------|-----------|----------------|--------|-----------|
-| 1. Foundation | v1.0 | 2/2 | Complete | 2026-03-09 |
-| 2. Check Backend | 2/2 | Complete | | 2026-03-22 |
-| 3. Column Backend | 2/2 | Complete   | | 2026-03-22 |
-| 4. Container Backend and Polars Registration | 3/3 | Complete | | 2026-03-23 |
-| 5. Ibis Registration and Integration | 3/3 | Complete | | 2026-03-23 |
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. PR Review Architecture Fixes | 3/3 | Complete | 2026-03-22 |
+| 2. Remaining PR Review Fixes | 2/2 | Complete | 2026-03-22 |
+| 3. Fix IbisCheckBackend delegation via apply() type-dispatch | 2/2 | Complete | 2026-03-22 |
+| 4. Lazy postprocess — always-lazy failure_cases | 3/3 | Complete | 2026-03-23 |
+| 5. Expression-based check protocol | 3/3 | Complete | 2026-03-23 |
+| 6. Eliminate unnecessary materialization | 3/3 | Complete | 2026-03-23 |
+| 7. v1.0 Tech Debt Cleanup | 2/2 | Complete | 2026-03-24 |
 
 ### Phase 1: PR Review Architecture Fixes
 
@@ -107,5 +109,5 @@ Plans:
 **Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 07-01-PLAN.md — Code correctness: fix `_count_failure_cases` dead branch, fix ibis DatabaseTable→Table rename
-- [ ] 07-02-PLAN.md — Docs & test hygiene: update Check.native docstring, promote 4 xpassed tests, delete hollow test, fix stale ROADMAP checkboxes
+- [x] 07-01-PLAN.md — Code correctness: fix `_count_failure_cases` dead branch, fix ibis DatabaseTable→Table rename
+- [x] 07-02-PLAN.md — Docs & test hygiene: update Check.native docstring, promote 4 xpassed tests, delete hollow test, fix stale ROADMAP checkboxes
