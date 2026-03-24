@@ -215,16 +215,18 @@ class TestBuiltinChecksPolars:
         assert isinstance(schema.validate(polars_df), pl.DataFrame)
 
     def test_isin_fails(self):
-        import narwhals.stable.v1 as nw
-
         schema = pa_pl.DataFrameSchema(
             {"x": pa_pl.Column(int, pa_pl.Check.isin([1, 2]))}
         )
         with pytest.raises(SchemaError) as exc_info:
             schema.validate(pl.DataFrame({"x": [1, 2, 99]}))
         fc = exc_info.value.failure_cases
-        assert isinstance(fc, nw.DataFrame)
-        assert 99 in nw.to_native(fc)["x"].to_list()
+        # Phase 6 contract: failure_cases is native pl.DataFrame (unwrapped), not nw.DataFrame.
+        # RED until Plan 03 materializes failure_cases to native in the error pipeline.
+        assert isinstance(fc, pl.DataFrame), (
+            f"expected native pl.DataFrame for polars input, got {type(fc)}"
+        )
+        assert 99 in fc["x"].to_list()
 
     def test_lazyframe_builtin_skipped_at_schema_only_depth(self):
         """Built-in data checks are skipped for LazyFrame (default SCHEMA_ONLY depth)."""
@@ -473,7 +475,7 @@ class TestCustomChecksIbis:
 
         assert len(received) == 1
         table_type, key = received[0]
-        assert table_type == "DatabaseTable", (
+        assert table_type == "Table", (
             "Custom ibis check should receive an ibis Table, got " + table_type
         )
         assert key == "x"
