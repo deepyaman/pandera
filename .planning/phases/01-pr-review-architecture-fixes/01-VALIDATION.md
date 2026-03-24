@@ -6,6 +6,7 @@ nyquist_compliant: true
 wave_0_complete: true
 created: 2026-03-21
 validated: 2026-03-24
+impl_bug_resolved: 2026-03-24
 ---
 
 # Phase 1 — Validation Strategy
@@ -58,13 +59,9 @@ validated: 2026-03-24
 
 ## Known Implementation Issues
 
-| Issue ID | Description | Test | Severity |
-|----------|-------------|------|----------|
-| IMPL-01 | `NarwhalsErrorHandler._count_failure_cases` crashes on string failure_cases via `nw.from_native(str)` | `test_narwhals_error_handler_counts_string_as_one` (xfail) | medium — causes `test_parity.py::test_custom_check_ibis_lazy` to fail |
-
-The plan (01-01-PLAN.md Task 2) required `NarwhalsErrorHandler` to fall back to base class for non-frame failure_cases (strings, scalars). The implementation replaced the guarded fallback with a bare `nw.from_native()` call that only handles frame types. Strings passed as `failure_cases` (column names, dtype strings, error messages) cause `TypeError: Unsupported dataframe type, got: <class 'str'>`.
-
-**Fix required in:** `pandera/api/narwhals/error_handler.py` — add try/except TypeError to fall back to `_ErrorHandler._count_failure_cases(failure_cases)`.
+| Issue ID | Description | Test | Severity | Resolution |
+|----------|-------------|------|----------|------------|
+| IMPL-01 | ~~`NarwhalsErrorHandler._count_failure_cases` crashes on string failure_cases via `nw.from_native(str)`~~ | `test_narwhals_error_handler_counts_string_as_one` | ~~medium~~ | **RESOLVED 2026-03-24** — `isinstance(failure_cases, str)` guard added before `nw.from_native()` in `pandera/api/narwhals/error_handler.py`. xfail marker removed. Test passes green. |
 
 ---
 
@@ -84,3 +81,5 @@ The plan (01-01-PLAN.md Task 2) required `NarwhalsErrorHandler` to fall back to 
 - [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** validated 2026-03-24 (12 green, 1 xfail for known impl bug IMPL-01)
+
+**Re-validation:** 2026-03-24 — IMPL-01 fixed. All 13 tests green (0 xfail). Full suite: `pytest tests/backends/narwhals/test_phase01_arch.py -v` → 13 passed.
