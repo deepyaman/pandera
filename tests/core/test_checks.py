@@ -98,117 +98,93 @@ class TestBuiltinNativeFalse:
 
 
 class TestBuiltinCheckSignatures:
-    """Test that all 14 builtin check functions accept (frame, key, ...) signature.
+    """Test that all 14 builtin check functions accept (col_expr: nw.Expr, ...) signature.
 
-    These tests call the builtin functions directly with (frame, key, ...) —
-    verifying the new signature is in place and produces correct output.
+    These tests call the builtin functions directly with nw.col(key) as the
+    first arg — verifying the Phase 5 nw.Expr protocol is in place and that
+    each function returns an nw.Expr.
     """
 
-    @pytest.fixture(autouse=True)
-    def register_backends(self):
-        """Ensure narwhals backends are registered."""
-        import warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            from pandera.backends.polars.register import register_polars_backends
-            register_polars_backends.cache_clear()
-            register_polars_backends()
-
-    @pytest.fixture
-    def lazy_frame(self):
-        """Return a simple polars LazyFrame wrapped in narwhals."""
-        return nw.from_native(
-            pl.LazyFrame({"x": [1, 2, 3], "s": ["foo", "foobar", "bar"]}),
-            eager_or_interchange_only=False,
-        )
-
-    def _get_builtin_fn(self, name):
-        """Retrieve the raw callable registered for a builtin check name."""
-        from pandera.api.base.checks import BaseCheck
-        # The registry stores a Dispatcher; get the underlying function
-        dispatcher = BaseCheck.CHECK_FUNCTION_REGISTRY[name]
-        return dispatcher
-
-    def test_equal_to_signature(self, lazy_frame):
-        """equal_to(frame, key, value=5) is callable with new signature."""
+    def test_equal_to_signature(self):
+        """equal_to(col_expr: nw.Expr, value=3) returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import equal_to
-        result = equal_to(lazy_frame, "x", value=3)
-        assert isinstance(result, nw.LazyFrame)
+        result = equal_to(nw.col("x"), value=3)
+        assert isinstance(result, nw.Expr)
 
-    def test_not_equal_to_signature(self, lazy_frame):
-        """not_equal_to(frame, key, value=0) is callable with new signature."""
+    def test_not_equal_to_signature(self):
+        """not_equal_to(col_expr: nw.Expr, value=0) returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import not_equal_to
-        result = not_equal_to(lazy_frame, "x", value=0)
-        assert isinstance(result, nw.LazyFrame)
+        result = not_equal_to(nw.col("x"), value=0)
+        assert isinstance(result, nw.Expr)
 
-    def test_greater_than_signature(self, lazy_frame):
-        """greater_than(frame, key, min_value=0) is callable with new signature."""
+    def test_greater_than_signature(self):
+        """greater_than(col_expr: nw.Expr, min_value=0) returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import greater_than
-        result = greater_than(lazy_frame, "x", min_value=0)
-        assert isinstance(result, nw.LazyFrame)
+        result = greater_than(nw.col("x"), min_value=0)
+        assert isinstance(result, nw.Expr)
 
-    def test_greater_than_or_equal_to_signature(self, lazy_frame):
-        """greater_than_or_equal_to(frame, key, min_value=1) is callable."""
+    def test_greater_than_or_equal_to_signature(self):
+        """greater_than_or_equal_to(col_expr: nw.Expr, min_value=1) returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import greater_than_or_equal_to
-        result = greater_than_or_equal_to(lazy_frame, "x", min_value=1)
-        assert isinstance(result, nw.LazyFrame)
+        result = greater_than_or_equal_to(nw.col("x"), min_value=1)
+        assert isinstance(result, nw.Expr)
 
-    def test_less_than_signature(self, lazy_frame):
-        """less_than(frame, key, max_value=10) is callable with new signature."""
+    def test_less_than_signature(self):
+        """less_than(col_expr: nw.Expr, max_value=10) returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import less_than
-        result = less_than(lazy_frame, "x", max_value=10)
-        assert isinstance(result, nw.LazyFrame)
+        result = less_than(nw.col("x"), max_value=10)
+        assert isinstance(result, nw.Expr)
 
-    def test_less_than_or_equal_to_signature(self, lazy_frame):
-        """less_than_or_equal_to(frame, key, max_value=10) is callable."""
+    def test_less_than_or_equal_to_signature(self):
+        """less_than_or_equal_to(col_expr: nw.Expr, max_value=10) returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import less_than_or_equal_to
-        result = less_than_or_equal_to(lazy_frame, "x", max_value=10)
-        assert isinstance(result, nw.LazyFrame)
+        result = less_than_or_equal_to(nw.col("x"), max_value=10)
+        assert isinstance(result, nw.Expr)
 
-    def test_in_range_signature(self, lazy_frame):
-        """in_range(frame, key, min_value, max_value, ...) is callable."""
+    def test_in_range_signature(self):
+        """in_range(col_expr: nw.Expr, min_value=1, max_value=5) returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import in_range
-        result = in_range(lazy_frame, "x", min_value=1, max_value=10)
-        assert isinstance(result, nw.LazyFrame)
+        result = in_range(nw.col("x"), min_value=1, max_value=5)
+        assert isinstance(result, nw.Expr)
 
-    def test_isin_signature(self, lazy_frame):
-        """isin(frame, key, allowed_values) is callable with new signature."""
+    def test_isin_signature(self):
+        """isin(col_expr: nw.Expr, allowed_values=[1, 2, 3]) returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import isin
-        result = isin(lazy_frame, "x", allowed_values=[1, 2, 3])
-        assert isinstance(result, nw.LazyFrame)
+        result = isin(nw.col("x"), allowed_values=[1, 2, 3])
+        assert isinstance(result, nw.Expr)
 
-    def test_notin_signature(self, lazy_frame):
-        """notin(frame, key, forbidden_values) is callable with new signature."""
+    def test_notin_signature(self):
+        """notin(col_expr: nw.Expr, forbidden_values=[0]) returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import notin
-        result = notin(lazy_frame, "x", forbidden_values=[0, -1])
-        assert isinstance(result, nw.LazyFrame)
+        result = notin(nw.col("x"), forbidden_values=[0])
+        assert isinstance(result, nw.Expr)
 
-    def test_str_matches_signature(self, lazy_frame):
-        """str_matches(frame, key, pattern) is callable with new signature."""
+    def test_str_matches_signature(self):
+        """str_matches(col_expr: nw.Expr, pattern=r'^a') returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import str_matches
-        result = str_matches(lazy_frame, "s", pattern=r"^foo")
-        assert isinstance(result, nw.LazyFrame)
+        result = str_matches(nw.col("x"), pattern=r"^a")
+        assert isinstance(result, nw.Expr)
 
-    def test_str_contains_signature(self, lazy_frame):
-        """str_contains(frame, key, pattern) is callable with new signature."""
+    def test_str_contains_signature(self):
+        """str_contains(col_expr: nw.Expr, pattern='a') returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import str_contains
-        result = str_contains(lazy_frame, "s", pattern="oo")
-        assert isinstance(result, nw.LazyFrame)
+        result = str_contains(nw.col("x"), pattern="a")
+        assert isinstance(result, nw.Expr)
 
-    def test_str_startswith_signature(self, lazy_frame):
-        """str_startswith(frame, key, string) is callable with new signature."""
+    def test_str_startswith_signature(self):
+        """str_startswith(col_expr: nw.Expr, string='a') returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import str_startswith
-        result = str_startswith(lazy_frame, "s", string="foo")
-        assert isinstance(result, nw.LazyFrame)
+        result = str_startswith(nw.col("x"), string="a")
+        assert isinstance(result, nw.Expr)
 
-    def test_str_endswith_signature(self, lazy_frame):
-        """str_endswith(frame, key, string) is callable with new signature."""
+    def test_str_endswith_signature(self):
+        """str_endswith(col_expr: nw.Expr, string='a') returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import str_endswith
-        result = str_endswith(lazy_frame, "s", string="bar")
-        assert isinstance(result, nw.LazyFrame)
+        result = str_endswith(nw.col("x"), string="a")
+        assert isinstance(result, nw.Expr)
 
-    def test_str_length_signature(self, lazy_frame):
-        """str_length(frame, key, min_value, max_value) is callable with new signature."""
+    def test_str_length_signature(self):
+        """str_length(col_expr: nw.Expr, min_value=1, max_value=10) returns nw.Expr."""
         from pandera.backends.narwhals.builtin_checks import str_length
-        result = str_length(lazy_frame, "s", min_value=2, max_value=10)
-        assert isinstance(result, nw.LazyFrame)
+        result = str_length(nw.col("x"), min_value=1, max_value=10)
+        assert isinstance(result, nw.Expr)
