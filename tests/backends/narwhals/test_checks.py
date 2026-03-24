@@ -453,9 +453,8 @@ def test_apply_returns_wide_table(make_narwhals_frame):
     )
 
 
-@pytest.mark.xfail(strict=False, reason="Phase 4 not yet implemented")
 def test_postprocess_lazyframe_no_materialization_polars(make_narwhals_frame):
-    """LAZY-02: polars failure_cases is nw.DataFrame (not pl.DataFrame) after Phase 4."""
+    """LAZY-02: polars failure_cases is nw.LazyFrame or nw.DataFrame (narwhals-wrapped) after Phase 4."""
     import narwhals.stable.v1 as nw
     from pandera.backends.narwhals.checks import NarwhalsCheckBackend
 
@@ -468,9 +467,9 @@ def test_postprocess_lazyframe_no_materialization_polars(make_narwhals_frame):
     backend = NarwhalsCheckBackend(check)
     result = backend(frame, key="x")
 
-    # After Phase 4: failure_cases stays as nw.DataFrame (narwhals-wrapped), not pl.DataFrame
-    assert isinstance(result.failure_cases, nw.DataFrame), (
-        f"expected nw.DataFrame, got {type(result.failure_cases)}"
+    # failure_cases is a narwhals lazy or eager frame — not a bare pl.DataFrame
+    assert isinstance(result.failure_cases, (nw.LazyFrame, nw.DataFrame)), (
+        f"expected nw.LazyFrame or nw.DataFrame, got {type(result.failure_cases)}"
     )
 
 
@@ -498,7 +497,6 @@ def test_postprocess_lazyframe_no_materialization_ibis(make_narwhals_frame):
     )
 
 
-@pytest.mark.xfail(strict=False, reason="Phase 4 not yet implemented")
 def test_ignore_na_lazy(make_narwhals_frame):
     """LAZY-07: ignore_na=True treats None as pass in lazy postprocess path."""
     import narwhals.stable.v1 as nw
@@ -510,12 +508,12 @@ def test_ignore_na_lazy(make_narwhals_frame):
     if "polars" not in type(native).__module__:
         pytest.skip("polars-specific test (ibis None handling differs)")
 
-    check = Check.greater_than(min_value=0)
+    check = Check.greater_than(min_value=0, ignore_na=True)
     backend = NarwhalsCheckBackend(check)
     result = backend(frame, key="x")
 
     # With ignore_na=True: None is treated as passing, so all rows pass
-    # After Phase 4: check_passed stays lazy (nw.LazyFrame or nw.DataFrame)
+    # check_passed stays lazy (nw.LazyFrame or nw.DataFrame)
     passed = result.check_passed
     assert isinstance(passed, (nw.LazyFrame, nw.DataFrame)), (
         f"expected lazy type, got {type(passed)}"
@@ -527,12 +525,12 @@ def test_ignore_na_lazy(make_narwhals_frame):
         val = bool(passed[CHECK_OUTPUT_KEY][0])
     assert val is True, "ignore_na=True: None should be treated as pass"
     # No failure cases since None was treated as passing
-    assert result.failure_cases is None or len(
-        nw.to_native(result.failure_cases)
-    ) == 0
+    fc = result.failure_cases
+    if isinstance(fc, nw.LazyFrame):
+        fc = fc.collect()
+    assert fc is None or len(nw.to_native(fc)) == 0
 
 
-@pytest.mark.xfail(strict=False, reason="Phase 4 not yet implemented")
 def test_n_failure_cases_lazy(make_narwhals_frame):
     """LAZY-08: n_failure_cases=1 limits failure_cases to 1 row after Phase 4."""
     import narwhals.stable.v1 as nw
@@ -547,9 +545,12 @@ def test_n_failure_cases_lazy(make_narwhals_frame):
     backend = NarwhalsCheckBackend(check)
     result = backend(frame, key="x")
 
-    # After Phase 4: failure_cases is nw.DataFrame, limited to n_failure_cases rows
+    # failure_cases is limited to n_failure_cases rows; collect if lazy before len()
     assert result.failure_cases is not None
-    native_fc = nw.to_native(result.failure_cases)
+    fc = result.failure_cases
+    if isinstance(fc, nw.LazyFrame):
+        fc = fc.collect()
+    native_fc = nw.to_native(fc)
     assert len(native_fc) == 1, (
         f"expected 1 failure case (n_failure_cases=1), got {len(native_fc)}"
     )
