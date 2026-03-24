@@ -119,8 +119,8 @@ Plans:
 **Requirements:** MISSING-01, MISSING-02 (gap closure from v1.0 audit)
 **Gap Closure:** Closes MISSING-01, MISSING-02, FLOW-BROKEN-01, FLOW-BROKEN-02
 **Depends on:** Phase 7
-**Plans:** TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — Fix `failure_cases_metadata()`: replace ibis-specific rewrap with unified `nw.from_native` guard; fix `_count_failure_cases()`: add `try/except TypeError` scalar fallback
-- [ ] 08-02-PLAN.md — Regression tests: polars lazy=True per-row failure_cases, ibis lazy=True, bool-output check under lazy=True
+- [ ] 08-01-PLAN.md — RED baseline: write 3 failing regression tests covering MISSING-01 (polars + ibis per-row failure_cases) and MISSING-02 (bool scalar crash)
+- [ ] 08-02-PLAN.md — GREEN: fix failure_cases_metadata() ibis-only rewrap → unified nw.from_native guard; fix _count_failure_cases() → try/except TypeError scalar fallback
