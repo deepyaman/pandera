@@ -60,21 +60,9 @@ def test_narwhals_error_handler_counts_string_as_one():
 
     The narwhals backends pass string failure_cases (e.g., column names, dtype strings)
     to SchemaError. NarwhalsErrorHandler must not crash on them.
-
-    IMPLEMENTATION BUG: current implementation calls nw.from_native(str) which raises
-    TypeError. Plan 01 required fallback to base class for non-frame types, but the
-    implementation replaced the guarded fallback with a bare nw.from_native call.
-    See: pandera/api/narwhals/error_handler.py _count_failure_cases.
-    Tracked as: test_parity.py::test_custom_check_ibis_lazy failure.
     """
     from pandera.api.narwhals.error_handler import ErrorHandler as NarwhalsEH
 
-    # This SHOULD return 1 per the plan requirement (strings are scalar failure cases)
-    # but currently raises TypeError — mark xfail until implementation is fixed
-    pytest.xfail(
-        "IMPL BUG: NarwhalsErrorHandler._count_failure_cases crashes on string "
-        "failure_cases via nw.from_native(str) — should return 1 like base class"
-    )
     count = NarwhalsEH._count_failure_cases("some_column")
     assert count == 1, f"Expected 1 for string, got {count}"
 

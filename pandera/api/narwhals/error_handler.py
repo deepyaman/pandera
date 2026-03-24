@@ -10,6 +10,9 @@ class ErrorHandler(_ErrorHandler):
 
     @staticmethod
     def _count_failure_cases(failure_cases) -> int:
+        if isinstance(failure_cases, str):  # Avoid returning str length
+            return 1
+
         # failure_cases is always native at SchemaError boundary (Phase 6 contract).
         # nw.from_native wraps pl.DataFrame, pl.LazyFrame, and ibis.Table uniformly
         # without backend-specific isinstance checks.
