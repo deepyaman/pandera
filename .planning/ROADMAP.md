@@ -30,6 +30,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 | 5. Expression-based check protocol | 3/3 | Complete | 2026-03-23 |
 | 6. Eliminate unnecessary materialization | 3/3 | Complete | 2026-03-23 |
 | 7. v1.0 Tech Debt Cleanup | 2/2 | Complete   | 2026-03-24 |
+| 8. Fix lazy=True critical regressions | 0/2 | Pending | — |
 
 ### Phase 1: PR Review Architecture Fixes
 
@@ -111,3 +112,15 @@ Plans:
 Plans:
 - [x] 07-01-PLAN.md — Code correctness: fix `_count_failure_cases` dead branch, fix ibis DatabaseTable→Table rename
 - [x] 07-02-PLAN.md — Docs & test hygiene: update Check.native docstring, promote 4 xpassed tests, delete hollow test, fix stale ROADMAP checkboxes
+
+### Phase 8: Fix lazy=True critical regressions
+
+**Goal:** Close the two critical integration breaks found in the v1.0 post-audit: (1) `failure_cases_metadata()` collapsing N polars lazy failure rows to a single repr string, and (2) `_count_failure_cases()` crashing with `TypeError` when `failure_cases` is a bool scalar. Both fixes must be narwhals-idiomatic — no native type-dependent `isinstance` checks — and the lazy=True path must work for both polars and ibis.
+**Requirements:** MISSING-01, MISSING-02 (gap closure from v1.0 audit)
+**Gap Closure:** Closes MISSING-01, MISSING-02, FLOW-BROKEN-01, FLOW-BROKEN-02
+**Depends on:** Phase 7
+**Plans:** TBD
+
+Plans:
+- [ ] 08-01-PLAN.md — Fix `failure_cases_metadata()`: replace ibis-specific rewrap with unified `nw.from_native` guard; fix `_count_failure_cases()`: add `try/except TypeError` scalar fallback
+- [ ] 08-02-PLAN.md — Regression tests: polars lazy=True per-row failure_cases, ibis lazy=True, bool-output check under lazy=True
