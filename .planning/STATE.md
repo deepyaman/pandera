@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: Tech Debt Cleanup
 current_plan: 2 of 3
 status: completed
-stopped_at: Phase 7 context gathered
-last_updated: "2026-03-24T14:16:56.523Z"
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-03-24T14:37:50.641Z"
 last_activity: 2026-03-23 — Plan 06-02 complete (run_check unified, check_nullable scalar-only, SchemaError.failure_cases now native pl.DataFrame/ibis.Table)
 progress:
   total_phases: 7
   completed_phases: 6
-  total_plans: 16
-  completed_plans: 16
+  total_plans: 18
+  completed_plans: 17
   percent: 100
 ---
 
@@ -83,6 +83,8 @@ Phase 03 decisions:
 - [Phase 06-02]: failure_cases_metadata handles native ibis.Table: wrap to nw.from_native() to reuse existing narwhals materialization path — avoids duplicating pl.from_arrow conversion
 - [Phase 06-02]: NarwhalsErrorHandler._count_failure_cases: ibis.Table.count().execute() is the correct count — ibis.Table.__len__() raises ExpressionError
 - [Phase 06]: _is_lazy_or_sql() helper: isinstance(fc, nw.LazyFrame) OR ibis nw.DataFrame with hasattr(execute) — detects both polars-lazy and SQL-lazy; container.py boundary unwrap uses same manual detection pattern as components.py since _to_native(nw.LazyFrame) returns pl.LazyFrame uncollected; nw.DataFrame.lazy() works for ibis, subsample normalization unchanged
+- [Phase 07]: nw.from_native(failure_cases, eager_only=False) is the correct unified pattern for _count_failure_cases — accepts pl.DataFrame, pl.LazyFrame, and ibis.Table without backend-specific isinstance branches
+- [Phase 07]: _materialize import removed from error_handler.py — Phase 6 contract ensures failure_cases is always native at SchemaError boundary, so nw.from_native wrapping handles all types
 
 ### Roadmap Evolution
 
@@ -105,6 +107,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-24T14:16:56.520Z
-Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-v1.0-tech-debt-cleanup/07-CONTEXT.md
+Last session: 2026-03-24T14:37:44.668Z
+Stopped at: Completed 07-01-PLAN.md
+Resume file: None
