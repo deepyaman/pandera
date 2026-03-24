@@ -86,8 +86,9 @@ class Check(BaseCheck):
         :param native: If True (default), the check function receives the raw
             native frame and the column key as positional args:
             ``check_fn(native_frame, key)``. If False, the check function
-            receives the narwhals-wrapped frame and key:
-            ``check_fn(nw_frame, key)``. Builtin checks use ``native=False``.
+            receives a narwhals expression ``nw.col(key)`` (a ``nw.Expr``)
+            as its sole argument: ``check_fn(nw.col(key))``. Builtin checks
+            use ``native=False``.
         :param name: optional name for the check.
         :param error: custom error message if series fails validation
             check.

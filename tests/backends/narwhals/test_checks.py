@@ -474,7 +474,6 @@ def test_postprocess_lazyframe_no_materialization_polars(make_narwhals_frame):
     )
 
 
-@pytest.mark.xfail(strict=False, reason="Phase 4 not yet implemented")
 def test_postprocess_lazyframe_no_materialization_ibis(make_narwhals_frame):
     """LAZY-03: ibis failure_cases is nw.DataFrame wrapping ibis.Table after Phase 4."""
     ibis_mod = pytest.importorskip("ibis")
