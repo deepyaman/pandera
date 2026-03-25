@@ -4,7 +4,6 @@ import warnings
 from collections import defaultdict
 
 import narwhals.stable.v1 as nw
-import polars as pl
 
 from pandera.api.narwhals.error_handler import ErrorHandler
 from pandera.api.narwhals.utils import _materialize
@@ -198,51 +197,14 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 )
             )
 
-            # If failure_cases was deferred (postprocess_expr_output stored None,
-            # which run_check converted to False), reconstruct from the stored nw.Expr.
-            # err.data is the original validated frame; err.check_output is the nw.Expr.
-            # This runs only when SchemaErrors is raised — never on the drop_invalid_rows path.
-            if (
-                err.failure_cases is False
-                and isinstance(err.check_output, nw.Expr)
-                and err.data is not None
-            ):
-                data_frame = nw.from_native(err.data, eager_or_interchange_only=False)
-                check_col_frame = data_frame.with_columns(
-                    err.check_output.alias(CHECK_OUTPUT_KEY)
-                )
-                # Reconstruct failure_cases: rows where the check failed.
-                # Apply ignore_na at column level (consistent with postprocess_expr_output).
-                if err.check is not None and getattr(err.check, "ignore_na", False):
-                    check_col_frame = check_col_frame.with_columns(
-                        nw.col(CHECK_OUTPUT_KEY) | nw.col(CHECK_OUTPUT_KEY).is_null()
-                    )
-                fc_frame = check_col_frame.filter(~nw.col(CHECK_OUTPUT_KEY))
-                # Select only the key column for the failure case values.
-                if (
-                    err.schema is not None
-                    and hasattr(err.schema, "name")
-                    and err.schema.name
-                    and err.schema.name in check_col_frame.collect_schema().names()
-                ):
-                    fc_frame = fc_frame.select(err.schema.name)
-                else:
-                    fc_frame = fc_frame.drop(CHECK_OUTPUT_KEY)
-                # Apply n_failure_cases limit.
-                if err.check is not None and err.check.n_failure_cases is not None:
-                    fc_frame = fc_frame.head(err.check.n_failure_cases)
-                # Replace err.failure_cases with the reconstructed frame.
-                # Use a mutable wrapper: create a synthetic err.failure_cases for branching below.
-                fc = fc_frame  # nw.LazyFrame (polars) or nw.DataFrame (ibis)
-            else:
-                # Wrap any native frame (pl.DataFrame, pl.LazyFrame, ibis.Table) back to narwhals
-                # so the type checks below work uniformly.
-                # Python scalars/None/bool raise TypeError — leave fc unchanged (scalar path below).
-                fc = err.failure_cases
-                try:
-                    fc = nw.from_native(fc, eager_or_interchange_only=False)
-                except TypeError:
-                    pass
+            # Wrap any native frame (pl.DataFrame, pl.LazyFrame, ibis.Table) back to narwhals
+            # so the type checks below work uniformly.
+            # Python scalars/None/bool raise TypeError — leave fc unchanged (scalar path below).
+            fc = err.failure_cases
+            try:
+                fc = nw.from_native(fc, eager_or_interchange_only=False)
+            except TypeError:
+                pass
 
             if isinstance(fc, (nw.LazyFrame, nw.DataFrame)) and _is_lazy_or_sql(fc):
                 # --- Lazy/SQL path (polars-lazy nw.LazyFrame or ibis nw.DataFrame) ---
@@ -275,6 +237,7 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 # --- Eager polars path (nw.DataFrame wrapping pl.DataFrame) ---
                 # Keep existing polars-based logic — works correctly for eager inputs.
                 # Row index is derivable from check_output.
+                import polars as pl
                 fc_eager = _materialize(fc)
                 pl_fc = pl.from_arrow(fc_eager.to_arrow())
 
@@ -282,16 +245,11 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 resolved_co = None
                 if err.check_output is not None:
                     co = err.check_output
-                    if isinstance(co, nw.Expr) and err.data is not None:
-                        # failure_cases was deferred in postprocess_expr_output().
-                        # Reconstruct the wide table from err.data + expr.
-                        data_frame = nw.from_native(err.data, eager_or_interchange_only=False)
-                        resolved_co = data_frame.with_columns(co.alias(CHECK_OUTPUT_KEY))
-                    elif not isinstance(co, (nw.Expr, nw.LazyFrame, nw.DataFrame)):
-                        resolved_co = nw.from_native(co, eager_or_interchange_only=False)
-                    elif isinstance(co, (nw.LazyFrame, nw.DataFrame)):
+                    if isinstance(co, (nw.LazyFrame, nw.DataFrame)):
                         resolved_co = co
-                    # else: nw.Expr without data — resolved_co stays None
+                    elif not isinstance(co, nw.Expr):
+                        resolved_co = nw.from_native(co, eager_or_interchange_only=False)
+                    # nw.Expr: resolved_co stays None (err.data unavailable)
 
                 if resolved_co is not None:
                     co_eager = _materialize(resolved_co)
@@ -333,6 +291,7 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
 
             else:
                 # --- Scalar path (Python scalars, strings, etc.) ---
+                import polars as pl
                 scalar_failure_cases = defaultdict(list)
                 scalar_failure_cases["failure_case"].append(err.failure_cases)
                 scalar_failure_cases["schema_context"].append(
@@ -358,8 +317,10 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 import functools
                 failure_cases = functools.reduce(lambda a, b: a.union(b), failure_case_collection)
             else:
+                import polars as pl
                 failure_cases = pl.concat(failure_case_collection)  # pl.LazyFrame or pl.DataFrame
         else:
+            import polars as pl
             failure_cases = pl.DataFrame()
 
         error_handler = ErrorHandler()

@@ -31,7 +31,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 | 6. Eliminate unnecessary materialization | 3/3 | Complete | 2026-03-23 |
 | 7. v1.0 Tech Debt Cleanup | 2/2 | Complete   | 2026-03-24 |
 | 8. Fix lazy=True critical regressions | 2/2 | Complete   | 2026-03-25 |
-| 9. Accumulate check outputs into single wide table for narwhals-idiomatic drop_invalid_rows | 0/2 | In Progress | — |
+| 9. Accumulate check outputs into single wide table for narwhals-idiomatic drop_invalid_rows | 2/2 | Complete | 2026-03-25 |
 
 ### Phase 1: PR Review Architecture Fixes
 
@@ -134,5 +134,5 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 09-01-PLAN.md — RED baseline: confirm 20 failing drop_invalid_rows tests, add xfail parity test
-- [ ] 09-02-PLAN.md — GREEN: apply() returns nw.Expr, add postprocess_expr_output(), replace drop_invalid_rows() with nw.all_horizontal accumulation
+- [x] 09-01-PLAN.md — RED baseline: confirm 20 failing drop_invalid_rows tests, add xfail parity test
+- [x] 09-02-PLAN.md — GREEN: apply() returns nw.Expr, add postprocess_expr_output(), replace drop_invalid_rows() with nw.all_horizontal accumulation
