@@ -102,8 +102,29 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
 
         if not passed:
             if check_result.failure_cases is None:
-                failure_cases = passed
-                message = f"Check '{check}' failed — no failure cases captured."
+                # Expr path: postprocess_expr_output deferred failure_cases computation.
+                # Reconstruct from the stored nw.Expr and the original check_obj frame.
+                if isinstance(check_result.check_output, nw.Expr):
+                    frame = nw.from_native(check_obj, eager_or_interchange_only=False)
+                    expr = check_result.check_output
+                    check_col = frame.with_columns(expr.alias(CHECK_OUTPUT_KEY))
+                    if check.ignore_na:
+                        check_col = check_col.with_columns(
+                            nw.col(CHECK_OUTPUT_KEY) | nw.col(CHECK_OUTPUT_KEY).is_null()
+                        )
+                    fc = check_col.filter(~nw.col(CHECK_OUTPUT_KEY))
+                    if check_result.checked_object is not None:
+                        key = check_result.checked_object.key
+                        if key and key != "*":
+                            fc = fc.select(key)
+                        else:
+                            fc = fc.drop(CHECK_OUTPUT_KEY)
+                    if check.n_failure_cases is not None:
+                        fc = fc.head(check.n_failure_cases)
+                    failure_cases = fc
+                else:
+                    failure_cases = passed
+                message = f"Check '{check}' failed."
             else:
                 fc = check_result.failure_cases
                 # Drop CHECK_OUTPUT_KEY column if present (wide table includes it for key=="*" checks)
@@ -177,14 +198,51 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 )
             )
 
-            # Wrap any native frame (pl.DataFrame, pl.LazyFrame, ibis.Table) back to narwhals
-            # so the type checks below work uniformly.
-            # Python scalars/None/bool raise TypeError — leave fc unchanged (scalar path below).
-            fc = err.failure_cases
-            try:
-                fc = nw.from_native(fc, eager_or_interchange_only=False)
-            except TypeError:
-                pass
+            # If failure_cases was deferred (postprocess_expr_output stored None,
+            # which run_check converted to False), reconstruct from the stored nw.Expr.
+            # err.data is the original validated frame; err.check_output is the nw.Expr.
+            # This runs only when SchemaErrors is raised — never on the drop_invalid_rows path.
+            if (
+                err.failure_cases is False
+                and isinstance(err.check_output, nw.Expr)
+                and err.data is not None
+            ):
+                data_frame = nw.from_native(err.data, eager_or_interchange_only=False)
+                check_col_frame = data_frame.with_columns(
+                    err.check_output.alias(CHECK_OUTPUT_KEY)
+                )
+                # Reconstruct failure_cases: rows where the check failed.
+                # Apply ignore_na at column level (consistent with postprocess_expr_output).
+                if err.check is not None and getattr(err.check, "ignore_na", False):
+                    check_col_frame = check_col_frame.with_columns(
+                        nw.col(CHECK_OUTPUT_KEY) | nw.col(CHECK_OUTPUT_KEY).is_null()
+                    )
+                fc_frame = check_col_frame.filter(~nw.col(CHECK_OUTPUT_KEY))
+                # Select only the key column for the failure case values.
+                if (
+                    err.schema is not None
+                    and hasattr(err.schema, "name")
+                    and err.schema.name
+                    and err.schema.name in check_col_frame.collect_schema().names()
+                ):
+                    fc_frame = fc_frame.select(err.schema.name)
+                else:
+                    fc_frame = fc_frame.drop(CHECK_OUTPUT_KEY)
+                # Apply n_failure_cases limit.
+                if err.check is not None and err.check.n_failure_cases is not None:
+                    fc_frame = fc_frame.head(err.check.n_failure_cases)
+                # Replace err.failure_cases with the reconstructed frame.
+                # Use a mutable wrapper: create a synthetic err.failure_cases for branching below.
+                fc = fc_frame  # nw.LazyFrame (polars) or nw.DataFrame (ibis)
+            else:
+                # Wrap any native frame (pl.DataFrame, pl.LazyFrame, ibis.Table) back to narwhals
+                # so the type checks below work uniformly.
+                # Python scalars/None/bool raise TypeError — leave fc unchanged (scalar path below).
+                fc = err.failure_cases
+                try:
+                    fc = nw.from_native(fc, eager_or_interchange_only=False)
+                except TypeError:
+                    pass
 
             if isinstance(fc, (nw.LazyFrame, nw.DataFrame)) and _is_lazy_or_sql(fc):
                 # --- Lazy/SQL path (polars-lazy nw.LazyFrame or ibis nw.DataFrame) ---
@@ -221,11 +279,22 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 pl_fc = pl.from_arrow(fc_eager.to_arrow())
 
                 # Compute row indices of failing cases from check_output.
+                resolved_co = None
                 if err.check_output is not None:
                     co = err.check_output
-                    if not isinstance(co, (nw.LazyFrame, nw.DataFrame)):
-                        co = nw.from_native(co, eager_or_interchange_only=False)
-                    co_eager = _materialize(co)
+                    if isinstance(co, nw.Expr) and err.data is not None:
+                        # failure_cases was deferred in postprocess_expr_output().
+                        # Reconstruct the wide table from err.data + expr.
+                        data_frame = nw.from_native(err.data, eager_or_interchange_only=False)
+                        resolved_co = data_frame.with_columns(co.alias(CHECK_OUTPUT_KEY))
+                    elif not isinstance(co, (nw.Expr, nw.LazyFrame, nw.DataFrame)):
+                        resolved_co = nw.from_native(co, eager_or_interchange_only=False)
+                    elif isinstance(co, (nw.LazyFrame, nw.DataFrame)):
+                        resolved_co = co
+                    # else: nw.Expr without data — resolved_co stays None
+
+                if resolved_co is not None:
+                    co_eager = _materialize(resolved_co)
                     try:
                         co_indexed = co_eager.with_row_index("index")
                     except Exception:

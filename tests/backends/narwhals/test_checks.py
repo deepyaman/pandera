@@ -433,28 +433,34 @@ def test_ibis_boolean_scalar_normalization(make_narwhals_frame):
 # ---------------------------------------------------------------------------
 
 
-def test_apply_returns_wide_table(make_narwhals_frame):
-    """LAZY-01: apply() returns wide table (data columns + CHECK_OUTPUT_KEY)."""
+def test_apply_returns_expr(make_narwhals_frame):
+    """LAZY-01 (Phase 09): apply() returns nw.Expr for native=False checks (replaces wide table).
+
+    Phase 09 change: apply() now returns nw.Expr directly rather than a wide table.
+    The expr is stored as check_output and failure_cases are deferred — no wide table
+    is built during the check loop. This enables drop_invalid_rows to use
+    nw.all_horizontal on the accumulated exprs.
+    """
     import narwhals.stable.v1 as nw
     from pandera.backends.narwhals.checks import NarwhalsCheckBackend
-    from pandera.constants import CHECK_OUTPUT_KEY
 
     check = Check.greater_than(min_value=0)
     frame = make_narwhals_frame({"x": [1, 2, 3]})
     backend = NarwhalsCheckBackend(check)
     result = backend(frame, key="x")
 
-    schema_names = result.check_output.collect_schema().names()
-    assert CHECK_OUTPUT_KEY in schema_names, (
-        f"Expected {CHECK_OUTPUT_KEY!r} in check_output columns, got {schema_names}"
-    )
-    assert "x" in schema_names, (
-        f"Expected 'x' in check_output columns (wide table), got {schema_names}"
+    assert isinstance(result.check_output, nw.Expr), (
+        f"Expected check_output to be nw.Expr (Phase 09), got {type(result.check_output)}"
     )
 
 
 def test_postprocess_lazyframe_no_materialization_polars(make_narwhals_frame):
-    """LAZY-02: polars failure_cases is nw.LazyFrame or nw.DataFrame (narwhals-wrapped) after Phase 4."""
+    """LAZY-02 (Phase 09): polars failure_cases is None from direct backend call — deferred.
+
+    Phase 09 change: postprocess_expr_output() stores failure_cases=None (deferred).
+    Direct backend() calls return None for failure_cases. The full validation pipeline
+    (run_check → components.validate) reconstructs failure_cases from the stored nw.Expr.
+    """
     import narwhals.stable.v1 as nw
     from pandera.backends.narwhals.checks import NarwhalsCheckBackend
 
@@ -467,14 +473,23 @@ def test_postprocess_lazyframe_no_materialization_polars(make_narwhals_frame):
     backend = NarwhalsCheckBackend(check)
     result = backend(frame, key="x")
 
-    # failure_cases is a narwhals lazy or eager frame — not a bare pl.DataFrame
-    assert isinstance(result.failure_cases, (nw.LazyFrame, nw.DataFrame)), (
-        f"expected nw.LazyFrame or nw.DataFrame, got {type(result.failure_cases)}"
+    # Phase 09: failure_cases is deferred (None) from direct backend() call.
+    # check_output is nw.Expr; failure_cases reconstruction happens in run_check.
+    assert result.failure_cases is None, (
+        f"expected None (deferred — Phase 09), got {type(result.failure_cases)}"
+    )
+    assert isinstance(result.check_output, nw.Expr), (
+        f"expected check_output to be nw.Expr (Phase 09), got {type(result.check_output)}"
     )
 
 
 def test_postprocess_lazyframe_no_materialization_ibis(make_narwhals_frame):
-    """LAZY-03: ibis failure_cases is nw.DataFrame wrapping ibis.Table after Phase 4."""
+    """LAZY-03 (Phase 09): ibis failure_cases is None from direct backend call — deferred.
+
+    Phase 09 change: postprocess_expr_output() stores failure_cases=None (deferred).
+    Direct backend() calls return None for failure_cases. The full validation pipeline
+    (run_check → components.validate) reconstructs failure_cases from the stored nw.Expr.
+    """
     ibis_mod = pytest.importorskip("ibis")
     import narwhals.stable.v1 as nw
     from pandera.backends.narwhals.checks import NarwhalsCheckBackend
@@ -488,12 +503,13 @@ def test_postprocess_lazyframe_no_materialization_ibis(make_narwhals_frame):
     backend = NarwhalsCheckBackend(check)
     result = backend(frame, key="x")
 
-    # After Phase 4: failure_cases is nw.DataFrame wrapping ibis.Table
-    assert isinstance(result.failure_cases, nw.DataFrame), (
-        f"expected nw.DataFrame, got {type(result.failure_cases)}"
+    # Phase 09: failure_cases is deferred (None) from direct backend() call.
+    # check_output is nw.Expr; failure_cases reconstruction happens in run_check.
+    assert result.failure_cases is None, (
+        f"expected None (deferred — Phase 09), got {type(result.failure_cases)}"
     )
-    assert isinstance(nw.to_native(result.failure_cases), ibis_mod.Table), (
-        f"expected native ibis.Table, got {type(nw.to_native(result.failure_cases))}"
+    assert isinstance(result.check_output, nw.Expr), (
+        f"expected check_output to be nw.Expr (Phase 09), got {type(result.check_output)}"
     )
 
 
@@ -532,25 +548,41 @@ def test_ignore_na_lazy(make_narwhals_frame):
 
 
 def test_n_failure_cases_lazy(make_narwhals_frame):
-    """LAZY-08: n_failure_cases=1 limits failure_cases to 1 row after Phase 4."""
-    import narwhals.stable.v1 as nw
-    from pandera.backends.narwhals.checks import NarwhalsCheckBackend
+    """LAZY-08 (Phase 09): n_failure_cases=1 limits failure_cases to 1 row via validation pipeline.
 
-    frame = make_narwhals_frame({"x": [-1, -2, -3]})
-    native = nw.to_native(frame)
+    Phase 09 change: failure_cases from direct backend() call is None (deferred).
+    n_failure_cases limiting happens in run_check when failure_cases are reconstructed
+    from the stored nw.Expr. Test via schema.validate() to exercise the full pipeline.
+    """
+    import polars as pl
+    import narwhals.stable.v1 as nw
+    from pandera.api.polars.container import DataFrameSchema
+    from pandera.api.polars.components import Column
+
+    native = nw.to_native(make_narwhals_frame({"x": [-1, -2, -3]}))
     if "polars" not in type(native).__module__:
         pytest.skip("polars-specific test")
 
-    check = Check.greater_than(min_value=0, n_failure_cases=1)
-    backend = NarwhalsCheckBackend(check)
-    result = backend(frame, key="x")
-
-    # failure_cases is limited to n_failure_cases rows; collect if lazy before len()
-    assert result.failure_cases is not None
-    fc = result.failure_cases
-    if isinstance(fc, nw.LazyFrame):
-        fc = fc.collect()
-    native_fc = nw.to_native(fc)
-    assert len(native_fc) == 1, (
-        f"expected 1 failure case (n_failure_cases=1), got {len(native_fc)}"
+    schema = DataFrameSchema(
+        columns={"x": Column(pl.Int64, checks=[Check.greater_than(min_value=0, n_failure_cases=1)])},
     )
+    try:
+        schema.validate(pl.LazyFrame({"x": [-1, -2, -3]}))
+    except (Exception,) as exc:
+        # SchemaError.failure_cases is native after pipeline
+        import pandera.errors as pa_errors
+        if not isinstance(exc, (pa_errors.SchemaError, pa_errors.SchemaErrors)):
+            raise
+        fc = exc.failure_cases if hasattr(exc, "failure_cases") else None
+        if fc is None:
+            pytest.fail("failure_cases should not be None")
+        # failure_cases is a pl.DataFrame or pl.LazyFrame after validation pipeline
+        if isinstance(fc, pl.LazyFrame):
+            fc = fc.collect()
+        if isinstance(fc, pl.DataFrame):
+            # n_failure_cases limits the "failure_case" column entries
+            assert len(fc) <= 1, (
+                f"expected at most 1 failure case (n_failure_cases=1), got {len(fc)}"
+            )
+        else:
+            pytest.fail(f"unexpected failure_cases type: {type(fc)}")

@@ -49,7 +49,11 @@ class NarwhalsCheckBackend(BaseCheckBackend):
                 expr = selector.map_batches(
                     self.check_fn, return_dtype=nw.Boolean
                 )
-                return frame.with_columns(expr.alias(CHECK_OUTPUT_KEY))
+                # Force evaluation on a minimal probe to catch SQL-lazy
+                # backends that reject map_batches at query-plan build time
+                # (narwhals raises NotImplementedError during .select()).
+                frame.select(expr)
+                return expr
             except NotImplementedError:
                 raise NotImplementedError(
                     "element_wise checks are not supported on SQL-lazy backends "
@@ -71,7 +75,7 @@ class NarwhalsCheckBackend(BaseCheckBackend):
                 expr = self.check_fn(nw.col(key))
             else:
                 expr = self.check_fn(frame)
-            return frame.with_columns(expr.alias(CHECK_OUTPUT_KEY))
+            return expr
 
     @staticmethod
     def _normalize_native_output(out, check_obj: NarwhalsData):
@@ -98,7 +102,9 @@ class NarwhalsCheckBackend(BaseCheckBackend):
 
     def postprocess(self, check_obj: NarwhalsData, check_output):
         """Postprocesses the result of applying the check function."""
-        if isinstance(check_output, (nw.LazyFrame, nw.DataFrame)):
+        if isinstance(check_output, nw.Expr):
+            return self.postprocess_expr_output(check_obj, check_output)
+        elif isinstance(check_output, (nw.LazyFrame, nw.DataFrame)):
             return self.postprocess_lazyframe_output(check_obj, check_output)
         elif isinstance(check_output, bool):
             return self.postprocess_bool_output(check_obj, check_output)
@@ -106,6 +112,45 @@ class NarwhalsCheckBackend(BaseCheckBackend):
             f"output type of check_fn not recognized: {type(check_output)}"
         )
 
+    def postprocess_expr_output(
+        self,
+        check_obj: NarwhalsData,
+        expr: nw.Expr,
+    ) -> CheckResult:
+        """Postprocesses nw.Expr check output into a CheckResult.
+
+        Stores the original expr as check_output and defers failure_cases
+        computation entirely — no wide table is built during the check loop.
+
+        When drop_invalid_rows=True: failure_cases are never needed, so
+        this avoids all per-check materialization.
+        When SchemaErrors is raised: failure_cases_metadata() in base.py
+        reconstructs them from the stored expr exactly once.
+
+        check_passed is computed via a single-column select+aggregate
+        (frame.select(expr) → apply ignore_na on column → .select(.all()))
+        rather than frame.with_columns(expr) which keeps all original columns.
+
+        ignore_na is applied at the column level AFTER evaluation rather than
+        as expr | expr.is_null() — the latter causes ibis to produce incorrect
+        SQL (isnull() on an expression before binding returns True for all rows
+        on some SQL backends, because the expression is treated as nullable).
+        """
+        frame = check_obj.frame
+        # Evaluate expr to a single-column frame, then apply ignore_na on
+        # the concrete column values where is_null() works correctly.
+        check_col = frame.select(expr.alias(CHECK_OUTPUT_KEY))
+        if self.check.ignore_na:
+            check_col = check_col.with_columns(
+                nw.col(CHECK_OUTPUT_KEY) | nw.col(CHECK_OUTPUT_KEY).is_null()
+            )
+        passed = check_col.select(nw.col(CHECK_OUTPUT_KEY).all())
+        return CheckResult(
+            check_output=expr,   # Store ONLY the expr — failure_cases deferred
+            check_passed=passed,
+            checked_object=check_obj,
+            failure_cases=None,  # Computed later in failure_cases_metadata()
+        )
 
     def postprocess_lazyframe_output(
         self,
