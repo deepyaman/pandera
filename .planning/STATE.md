@@ -5,7 +5,7 @@ milestone_name: Tech Debt Cleanup
 current_plan: 2 of 3
 status: completed
 stopped_at: Completed 09-accumulate-check-outputs-into-single-wide-table-for-narwhals-idiomatic-drop-invalid-rows/09-02-PLAN.md
-last_updated: "2026-03-25T05:58:09.633Z"
+last_updated: "2026-03-25T06:02:18.876Z"
 last_activity: 2026-03-23 — Plan 06-02 complete (run_check unified, check_nullable scalar-only, SchemaError.failure_cases now native pl.DataFrame/ibis.Table)
 progress:
   total_phases: 9
