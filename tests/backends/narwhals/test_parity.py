@@ -102,10 +102,10 @@ def test_strict_filter_ibis_drops_extra_columns():
 
 
 def test_failure_cases_native_ibis():
-    """SchemaError.failure_cases on ibis validation is a nw.DataFrame wrapping ibis.Table.
+    """SchemaError.failure_cases on ibis validation is native ibis.Table.
 
-    After Phase 4 (04-03), failure_cases is kept as nw.DataFrame (wrapping the ibis.Table)
-    instead of being unwrapped to native — failure_cases_metadata materializes uniformly.
+    Phase 6 contract: failure_cases is native ibis.Table for ibis inputs — not nw.DataFrame.
+    RED until Plan 03 materializes failure_cases to native in the error pipeline.
     """
     import ibis
     from pandera.api.ibis.container import DataFrameSchema as IbisSchema
@@ -119,12 +119,9 @@ def test_failure_cases_native_ibis():
         pytest.fail("Expected SchemaError was not raised")
     except SchemaError as err:
         fc = err.failure_cases
-        # After Phase 4: failure_cases is nw.DataFrame wrapping ibis.Table (lazy).
-        assert isinstance(fc, nw.DataFrame), (
-            f"failure_cases should be nw.DataFrame (Phase 4+), got {type(fc)}"
-        )
-        assert isinstance(nw.to_native(fc), ibis.Table), (
-            f"native should be ibis.Table, got {type(nw.to_native(fc))}"
+        # Phase 6 contract: failure_cases is native ibis.Table (unwrapped).
+        assert isinstance(fc, ibis.Table), (
+            f"failure_cases should be native ibis.Table (Phase 6 contract), got {type(fc)}"
         )
 
 
@@ -270,3 +267,40 @@ def test_custom_check_ibis_lazy():
     t = _make_ibis_table({"a": [1, 2, 3]})
     with pytest.raises((SchemaError, SchemaErrors)):
         schema.validate(t, lazy=True)
+
+
+# ---------------------------------------------------------------------------
+# TEST-09: drop_invalid_rows expr accumulation (RED baseline for Phase 09)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.xfail(
+    reason=(
+        "Phase 09 RED baseline: check_output is currently nw.LazyFrame wide table, not nw.Expr. "
+        "Will be GREEN after 09-02 changes apply() to return nw.Expr directly."
+    ),
+    strict=True,
+)
+def test_drop_invalid_rows_expr_accumulation():
+    """check_output stored on SchemaError is nw.Expr after Phase 09 fix.
+
+    RED now: apply() returns a nw.LazyFrame wide table (with CHECK_OUTPUT_KEY column),
+    so check_output is a nw.LazyFrame — drop_invalid_rows crashes with
+    TypeError: Slicing is not supported on LazyFrame.
+
+    GREEN after 09-02: apply() returns nw.Expr directly; postprocess accumulates
+    expressions into a single wide table via with_columns(); drop_invalid_rows
+    filters without materialising.
+    """
+    schema = DataFrameSchema(
+        columns={"a": Column(pl.Int64, checks=[Check.greater_than(0)])},
+        drop_invalid_rows=True,
+    )
+    lf = pl.LazyFrame({"a": [-1, 1, 2]})
+    try:
+        schema.validate(lf, lazy=True)
+        pytest.fail("Expected SchemaErrors was not raised")
+    except SchemaErrors as err:
+        check_output = err.schema_errors[0].check_output
+        assert isinstance(check_output, nw.Expr), (
+            f"check_output should be nw.Expr after Phase 09 fix, got {type(check_output)}"
+        )
