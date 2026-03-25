@@ -31,6 +31,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 | 6. Eliminate unnecessary materialization | 3/3 | Complete | 2026-03-23 |
 | 7. v1.0 Tech Debt Cleanup | 2/2 | Complete   | 2026-03-24 |
 | 8. Fix lazy=True critical regressions | 2/2 | Complete   | 2026-03-25 |
+| 9. Accumulate check outputs into single wide table for narwhals-idiomatic drop_invalid_rows | 0/2 | In Progress | — |
 
 ### Phase 1: PR Review Architecture Fixes
 
@@ -124,3 +125,14 @@ Plans:
 Plans:
 - [ ] 08-01-PLAN.md — RED baseline: write 3 failing regression tests covering MISSING-01 (polars + ibis per-row failure_cases) and MISSING-02 (bool scalar crash)
 - [ ] 08-02-PLAN.md — GREEN: fix failure_cases_metadata() ibis-only rewrap → unified nw.from_native guard; fix _count_failure_cases() → try/except TypeError scalar fallback
+
+### Phase 9: Accumulate check outputs into single wide table for narwhals-idiomatic drop_invalid_rows
+
+**Goal:** Refactor the narwhals backend check loop so that per-check boolean outputs accumulate into a single wide table during iteration, enabling drop_invalid_rows to be a pure narwhals all_horizontal filter — no backend-specific isinstance checks, no IbisSchemaBackend delegation.
+**Requirements**: DIR-01, DIR-02, DIR-03, DIR-04, DIR-05, DIR-06, DIR-07
+**Depends on:** Phase 8
+**Plans:** 2 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — RED baseline: confirm 20 failing drop_invalid_rows tests, add xfail parity test
+- [ ] 09-02-PLAN.md — GREEN: apply() returns nw.Expr, add postprocess_expr_output(), replace drop_invalid_rows() with nw.all_horizontal accumulation
