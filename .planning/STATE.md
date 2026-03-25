@@ -5,7 +5,7 @@ milestone_name: Tech Debt Cleanup
 current_plan: 2 of 3
 status: completed
 stopped_at: Completed 08-fix-lazy-true-critical-regressions/08-02-PLAN.md
-last_updated: "2026-03-25T02:09:55.494Z"
+last_updated: "2026-03-25T02:13:50.613Z"
 last_activity: 2026-03-23 — Plan 06-02 complete (run_check unified, check_nullable scalar-only, SchemaError.failure_cases now native pl.DataFrame/ibis.Table)
 progress:
   total_phases: 8
