@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: Tech Debt Cleanup
 current_plan: 2 of 3
 status: completed
-stopped_at: Phase 8 context gathered
-last_updated: "2026-03-24T22:10:14.983Z"
+stopped_at: Completed 08-fix-lazy-true-critical-regressions/08-01-PLAN.md
+last_updated: "2026-03-25T01:59:47.002Z"
 last_activity: 2026-03-23 — Plan 06-02 complete (run_check unified, check_nullable scalar-only, SchemaError.failure_cases now native pl.DataFrame/ibis.Table)
 progress:
   total_phases: 8
   completed_phases: 7
-  total_plans: 18
-  completed_plans: 18
+  total_plans: 20
+  completed_plans: 19
   percent: 100
 ---
 
@@ -86,6 +86,7 @@ Phase 03 decisions:
 - [Phase 07]: nw.from_native(failure_cases, eager_only=False) is the correct unified pattern for _count_failure_cases — accepts pl.DataFrame, pl.LazyFrame, and ibis.Table without backend-specific isinstance branches
 - [Phase 07]: _materialize import removed from error_handler.py — Phase 6 contract ensures failure_cases is always native at SchemaError boundary, so nw.from_native wrapping handles all types
 - [Phase 07]: ROADMAP progress table restructured to reflect current 7-phase layout (v1.0 milestones moved to details block)
+- [Phase 08-fix-lazy-true-critical-regressions]: ibis MISSING-01 test is GREEN (Phase 6 already fixed ibis.Table rewrap); MISSING-02 requires native=True bool-returning check to trigger failure_cases=False path
 
 ### Roadmap Evolution
 
@@ -108,6 +109,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-24T22:10:14.980Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-fix-lazy-true-critical-regressions/08-CONTEXT.md
+Last session: 2026-03-25T01:59:46.999Z
+Stopped at: Completed 08-fix-lazy-true-critical-regressions/08-01-PLAN.md
+Resume file: None
