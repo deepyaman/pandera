@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: Tech Debt Cleanup
 current_plan: 2 of 3
 status: completed
-stopped_at: Completed 08-fix-lazy-true-critical-regressions/08-02-PLAN.md
-last_updated: "2026-03-25T02:13:50.613Z"
+stopped_at: Completed 09-accumulate-check-outputs-into-single-wide-table-for-narwhals-idiomatic-drop-invalid-rows/09-01-PLAN.md
+last_updated: "2026-03-25T05:23:34.844Z"
 last_activity: 2026-03-23 — Plan 06-02 complete (run_check unified, check_nullable scalar-only, SchemaError.failure_cases now native pl.DataFrame/ibis.Table)
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 8
-  total_plans: 20
-  completed_plans: 20
+  total_plans: 22
+  completed_plans: 21
   percent: 100
 ---
 
@@ -89,6 +89,9 @@ Phase 03 decisions:
 - [Phase 08-fix-lazy-true-critical-regressions]: ibis MISSING-01 test is GREEN (Phase 6 already fixed ibis.Table rewrap); MISSING-02 requires native=True bool-returning check to trigger failure_cases=False path
 - [Phase 08-fix-lazy-true-critical-regressions]: pl.DataFrame routes to eager polars path in failure_cases_metadata — _is_lazy_or_sql returns False for nw.DataFrame wrapping pl.DataFrame (no .execute()); failure_case column is Utf8 by design
 - [Phase 08-fix-lazy-true-critical-regressions]: isinstance(failure_cases, str) guard removed from _count_failure_cases — dead code after try/except TypeError since nw.from_native(str) also raises TypeError, returning 1 via except branch
+- [Phase 09]: xfail(strict=True) for drop_invalid_rows_expr_accumulation — enforces test actually fails now; CI breaks if it passes before 09-02 fix lands
+- [Phase 09]: Polars drop_invalid_rows failure: TypeError: Slicing is not supported on LazyFrame — drop_invalid_rows slices nw.LazyFrame column by index
+- [Phase 09]: Ibis drop_invalid_rows failure: AttributeError: LazyFrame has no attribute mutate — IbisSchemaBackend delegation receives nw.LazyFrame instead of ibis.Table
 
 ### Roadmap Evolution
 
@@ -98,6 +101,7 @@ Phase 03 decisions:
 - Phase 02 added: Remaining PR Review Fixes (horizontal concat, postprocess_bool_output polars code, custom checks delegation, check_dtype backend logic)
 - Phase 03 added: Fix IbisCheckBackend delegation (approach TBD at planning time)
 - Phase 06 added: Eliminate unnecessary materialization — lazy-first failure_cases and check_output
+- Phase 09 added: Accumulate check outputs into single wide table for narwhals-idiomatic drop_invalid_rows
 
 ### Pending Todos
 
@@ -111,6 +115,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-25T02:09:55.492Z
-Stopped at: Completed 08-fix-lazy-true-critical-regressions/08-02-PLAN.md
+Last session: 2026-03-25T05:23:34.841Z
+Stopped at: Completed 09-accumulate-check-outputs-into-single-wide-table-for-narwhals-idiomatic-drop-invalid-rows/09-01-PLAN.md
 Resume file: None
