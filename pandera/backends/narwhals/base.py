@@ -177,13 +177,13 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 )
             )
 
-            # Wrap native ibis.Table back to narwhals so the type checks below work uniformly.
+            # Wrap any native frame (pl.DataFrame, pl.LazyFrame, ibis.Table) back to narwhals
+            # so the type checks below work uniformly.
+            # Python scalars/None/bool raise TypeError — leave fc unchanged (scalar path below).
             fc = err.failure_cases
             try:
-                import ibis as _ibis
-                if isinstance(fc, _ibis.Table):
-                    fc = nw.from_native(fc, eager_or_interchange_only=False)
-            except ImportError:
+                fc = nw.from_native(fc, eager_or_interchange_only=False)
+            except TypeError:
                 pass
 
             if isinstance(fc, (nw.LazyFrame, nw.DataFrame)) and _is_lazy_or_sql(fc):

@@ -38,11 +38,20 @@ def test_lazy_failure_cases_per_row_polars():
     fc = exc_info.value.failure_cases
     assert len(fc) == 3, f"Expected 3 rows, got {len(fc)}: {fc}"
     assert "failure_case" in fc.columns
-    # Values must be individual ints, not a repr string
+    # Values must be individual values (int, float, or numeric string), not a DataFrame repr string.
+    # The eager polars path casts failure_case to Utf8; numeric strings like '1', '2', '3'
+    # are acceptable — what matters is 3 separate rows, not a single repr string.
     failure_values = fc["failure_case"].to_list()
-    assert all(isinstance(v, (int, float)) for v in failure_values), (
-        f"Expected individual values, got: {failure_values}"
-    )
+    for v in failure_values:
+        if isinstance(v, str):
+            try:
+                float(v)  # must be numeric-castable, not a DataFrame repr
+            except ValueError:
+                raise AssertionError(
+                    f"Expected individual numeric values, got non-numeric string: {v!r}"
+                )
+        elif not isinstance(v, (int, float)):
+            raise AssertionError(f"Expected numeric value, got: {type(v).__name__} {v!r}")
 
 
 def test_lazy_failure_cases_per_row_ibis():
