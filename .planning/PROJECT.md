@@ -6,6 +6,8 @@ A new Narwhals-backed validation engine for pandera that replaces the library-sp
 
 The v1.0 milestone shipped a complete Polars + Ibis narwhals backend with auto-detection registration, 18 dtype registrations, 14 builtin checks, full lazy validation support, and closed all known Ibis xfail gaps.
 
+The v1.1 milestone hardened the architecture: unified expression-based check protocol (`nw.Expr` throughout), lazy-first evaluation with a single materialization point for the pass/fail scalar, native `ibis.Table` failure_cases at schema error boundaries, and `drop_invalid_rows` reimplemented as pure narwhals `nw.all_horizontal` accumulation.
+
 ## Core Value
 
 Users can validate any Narwhals-supported dataframe library through a single, consistent backend — reducing maintenance burden and unlocking lazy validation and future library support for free.
@@ -27,6 +29,12 @@ Users can validate any Narwhals-supported dataframe library through a single, co
 - ✓ Unified test suite in `tests/backends/narwhals/` — backend-agnostic tests parameterized per library — v1.0
 - ✓ SQL-lazy `element_wise` guard raises `NotImplementedError` for Ibis/PySpark/DuckDB — v1.0
 - ✓ `failure_cases` always native frame type (not narwhals wrapper) — v1.0
+- ✓ `NarwhalsErrorHandler` subclass with no ibis imports in base `ErrorHandler` — v1.1
+- ✓ Expression-based check protocol: all 14 builtin checks return `nw.Expr`; `apply()` uniform across polars and ibis — v1.1
+- ✓ Lazy-first evaluation: single materialization for scalar bool; `failure_cases` and `check_output` stay lazy through the check loop — v1.1
+- ✓ `SchemaError.failure_cases` is native `ibis.Table` for ibis inputs, `pl.DataFrame` for polars — v1.1
+- ✓ `drop_invalid_rows` via `nw.all_horizontal` accumulation — pure narwhals, no `IbisSchemaBackend` delegation — v1.1
+- ✓ `lazy=True` regression fixes: per-row failure_cases content preserved, bool scalar `TypeError` crash resolved — v1.1
 
 ### Active
 
@@ -47,14 +55,15 @@ Users can validate any Narwhals-supported dataframe library through a single, co
 
 ## Context
 
+**v1.1 shipped (2026-03-25):** 9 phases, 22 plans, 21 Python files changed, +2,376 / -626 lines over 10 days. 221 tests passing.
+
 **v1.0 shipped (2026-03-15):** 5 phases, 18 plans, 60 files changed, ~10,900 lines added over 6 days.
 
 Tech stack: `narwhals.stable.v1`, `pandera/backends/narwhals/`, `pandera/engines/narwhals_engine.py`, `tests/backends/narwhals/`
 
-Polars and Ibis backends are now fully registered via narwhals. Known remaining issues from planning:
-- `nw.Datetime` parameterized dtypes (`time_unit`, `time_zone`) — resolved during Phase 1
-- `drop_invalid_rows` for Ibis uses IbisSchemaBackend delegation (positional-join logic)
-- coerce for Ibis is still xfail(strict=True) — intentional feature gate
+Known remaining items:
+- coerce for Ibis is still xfail(strict=True) — intentional feature gate for v2
+- `register.py` in narwhals backend is an empty stub (registration is handled by polars/ibis register modules via narwhals auto-detection)
 
 **Reference implementations studied:**
 - `pandera/backends/polars/` — model for narwhals container/components/checks
@@ -81,9 +90,13 @@ Polars and Ibis backends are now fully registered via narwhals. Known remaining 
 | `NarwhalsData` NamedTuple with field `frame` (not `lazyframe`) | Distinguishes from `PolarsData`; consistent with narwhals nomenclature | ✓ Good |
 | Auto-detection in `register_polars_backends()` not a separate function | Simplifies activation; avoids extra config flag | ✓ Good — `use_narwhals_backend` config field removed in 04-05 |
 | `group_by().agg(nw.len())` for SQL-lazy uniqueness checks | `collect()+is_duplicated()` not possible on SQL-lazy backends | ✓ Good |
-| Ibis `drop_invalid_rows` delegates to `IbisSchemaBackend` | No narwhals abstraction for positional row alignment | ✓ Good |
-| `failure_cases` for ibis validation is `pyarrow.Table` | Ibis DuckDB backend returns pyarrow when narwhals LazyFrame.collect() is called | ✓ Good — dual detection in failure_cases_metadata |
-| `ibis.Table` detection before `try/len()` in `_count_failure_cases` | Prevents `ExpressionError` from ibis lazy table len() call | ✓ Good — try/except ImportError guard for optional ibis |
+| Ibis `drop_invalid_rows` delegates to `IbisSchemaBackend` | No narwhals abstraction for positional row alignment | ⚠️ Revisited — removed in v1.1; replaced with `nw.all_horizontal` accumulation |
+| `failure_cases` for ibis validation is `pyarrow.Table` | Ibis DuckDB backend returns pyarrow when narwhals LazyFrame.collect() is called | ⚠️ Revisited — v1.1: `failure_cases` is native `ibis.Table` at boundary; pyarrow path eliminated |
+| `ibis.Table` detection before `try/len()` in `_count_failure_cases` | Prevents `ExpressionError` from ibis lazy table len() call | ⚠️ Revisited — v1.1: replaced with unified `try/except TypeError` via `nw.from_native` |
+| Expression-based check protocol: all checks return `nw.Expr` | Eliminates ibis row_number join hack; enables uniform `frame.with_columns(expr)` for polars and ibis | ✓ Good — v1.1 |
+| Single materialization point for scalar bool pass/fail | Keeps failure_cases lazy through check loop; only the `bool` is evaluated early | ✓ Good — v1.1 |
+| `NarwhalsErrorHandler` subclass (not `BaseErrorHandler` directly) | Allows `_count_failure_cases` override without ibis imports in base | ✓ Good — v1.1 |
+| `polars` imported lazily in `base.py` (not module-level) | polars is optional dep; ibis-only users shouldn't need it | ✓ Good — v1.1 |
 
 ---
-*Last updated: 2026-03-15 after v1.0 milestone*
+*Last updated: 2026-03-25 after v1.1 milestone*

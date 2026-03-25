@@ -50,8 +50,58 @@
 
 ---
 
+## Milestone: v1.1 — Ibis Parity & Lazy-First Architecture
+
+**Shipped:** 2026-03-25
+**Phases:** 9 | **Plans:** 22 | **Commits:** 147
+
+### What Was Built
+
+- Phase 1–2 (Architecture): `NarwhalsErrorHandler` subclass, ibis removed from base `ErrorHandler`, polars coupling removed from container, `check_nullable` and `check_dtype` refactored to narwhals-only ops
+- Phase 3 (Dispatch): `Check.native` flag, `NarwhalsCheckBackend.apply()` rewritten to 3 explicit branches (element_wise / native=True / native=False), ibis delegation removed from `__call__`
+- Phase 4–5 (Lazy + Expr): Always-lazy `failure_cases` in check loop; all 14 builtin checks rewritten to `nw.Expr` protocol; `apply()` reduced from ~100 lines to ~30 via uniform `frame.with_columns(expr)` — no ibis row_number join
+- Phase 6 (Materialization): Single materialization point for scalar bool; `failure_cases_metadata` backend-agnostic via narwhals ops; `SchemaError.failure_cases` native at boundary (`ibis.Table` or `pl.DataFrame`)
+- Phase 7 (Hygiene): xfail promotions, docstring updates, dead code removed, ROADMAP reconciled
+- Phase 8 (Regressions): Two surgical fixes for `lazy=True`: per-row failure_cases content lost (unified `nw.from_native` rewrap), bool scalar `TypeError` crash (`try/except TypeError` in `_count_failure_cases`)
+- Phase 9 (drop_invalid_rows): `apply()` returns `nw.Expr` directly; `drop_invalid_rows` uses `nw.all_horizontal` on accumulated exprs — pure narwhals, works for polars and ibis identically
+
+### What Worked
+
+- **Audit-driven gap closure**: Running `gsd:audit-milestone` after Phase 7 caught MISSING-01 and MISSING-02 before shipping — without it, the lazy=True regressions would have gone undetected
+- **TDD RED→GREEN discipline**: Phase 8 wrote failing regression tests first, then fixed. Would have been hard to diagnose without the failing test as a precise reproduction
+- **Phase 9 nw.Expr accumulation design**: Deferring `failure_cases` reconstruction to after the check loop (storing `nw.Expr`, reconstructing on error) eliminated the wide-table allocation during normal validation
+- **Integration checker confirming cross-phase wiring**: Caught the dead code branch in `failure_cases_metadata` and confirmed `err.data` was always `None`, enabling safe removal in tech debt cleanup
+
+### What Was Inefficient
+
+- **Milestone version mislabeled**: This milestone ran under `v1.0` in planning files — should have been `v1.1` from the start. Required renaming at completion
+- **Phase 8 was unplanned**: Two regressions discovered post-Phase 7 audit required an entire gap-closure phase. Better end-to-end `lazy=True` testing earlier (Phase 4–6) would have caught these
+- **Dead code in `failure_cases_metadata`**: The unreachable `err.data is not None` block survived through Phase 9 despite being obviously dead. Should have been caught during Phase 9 code review
+
+### Patterns Established
+
+- **`nw.Expr` as check return type**: All narwhals builtin checks now return `nw.Expr`; this is the canonical protocol for native=False checks going forward
+- **Lazy import for optional polars**: `import polars as pl` inside branches rather than at module level — apply to any narwhals module that conditionally uses polars
+- **`err.data = None` is invariant**: `ErrorHandler.collect_error()` unconditionally nulls `err.data` — never try to use it for deferred reconstruction
+- **Post-milestone audit before archiving**: Running `gsd:audit-milestone` caught 2 critical regressions; always audit before calling a milestone complete
+
+### Key Lessons
+
+- Design the `lazy=True` end-to-end flow before implementing individual phases — regressions MISSING-01 and MISSING-02 were caused by phase-by-phase changes that each looked correct locally
+- Milestone version numbering matters — set it correctly at kickoff, not at completion
+- The `nw.Expr` deferral pattern (store expr, reconstruct failure_cases on error raise) is more efficient than wide-table allocation and more robust across backends
+
+### Cost Observations
+
+- Phases: 9 | Plans: 22 | Commits: 147 | Timeline: 10 days
+- 2 unplanned phases (Phase 8 gap closure, Phase 9 added mid-milestone)
+- Notable: Scope grew ~55% from original 5-phase plan (PR review + arch + lazy + expr + materialization)
+
+---
+
 ## Cross-Milestone Trends
 
 | Milestone | Phases | Plans | Timeline | Scope Accuracy |
 |-----------|--------|-------|----------|----------------|
 | v1.0 Narwhals Backend | 5 | 18 | 6 days | ~70% (5 gap-closure plans unplanned) |
+| v1.1 Ibis Parity & Lazy-First Architecture | 9 | 22 | 10 days | ~55% (2 unplanned phases, scope grew from 5→9) |
