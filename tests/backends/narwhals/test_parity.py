@@ -13,6 +13,7 @@ import narwhals.stable.v1 as nw
 from pandera.api.polars.container import DataFrameSchema
 from pandera.api.polars.components import Column
 from pandera.api.checks import Check
+from pandera.config import ValidationDepth, config_context
 from pandera.errors import SchemaError, SchemaErrors
 
 
@@ -273,34 +274,45 @@ def test_custom_check_ibis_lazy():
 # TEST-09: drop_invalid_rows expr accumulation (RED baseline for Phase 09)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(
-    reason=(
-        "Phase 09 RED baseline: check_output is currently nw.LazyFrame wide table, not nw.Expr. "
-        "Will be GREEN after 09-02 changes apply() to return nw.Expr directly."
-    ),
-    strict=True,
-)
 def test_drop_invalid_rows_expr_accumulation():
-    """check_output stored on SchemaError is nw.Expr after Phase 09 fix.
+    """drop_invalid_rows with lazy=True correctly filters invalid rows using nw.Expr accumulation.
 
-    RED now: apply() returns a nw.LazyFrame wide table (with CHECK_OUTPUT_KEY column),
-    so check_output is a nw.LazyFrame — drop_invalid_rows crashes with
-    TypeError: Slicing is not supported on LazyFrame.
+    GREEN after 09-02: apply() returns nw.Expr directly; postprocess_expr_output()
+    stores check_output=expr (no wide table built during check loop); drop_invalid_rows
+    uses nw.all_horizontal on accumulated exprs — pure narwhals, no backend delegation.
 
-    GREEN after 09-02: apply() returns nw.Expr directly; postprocess accumulates
-    expressions into a single wide table via with_columns(); drop_invalid_rows
-    filters without materialising.
+    With drop_invalid_rows=True, SchemaErrors is NOT raised — invalid rows are silently
+    dropped. The result contains only the rows that pass all checks.
     """
     schema = DataFrameSchema(
         columns={"a": Column(pl.Int64, checks=[Check.greater_than(0)])},
         drop_invalid_rows=True,
     )
     lf = pl.LazyFrame({"a": [-1, 1, 2]})
-    try:
-        schema.validate(lf, lazy=True)
-        pytest.fail("Expected SchemaErrors was not raised")
-    except SchemaErrors as err:
-        check_output = err.schema_errors[0].check_output
-        assert isinstance(check_output, nw.Expr), (
-            f"check_output should be nw.Expr after Phase 09 fix, got {type(check_output)}"
-        )
+    result = schema.validate(lf, lazy=True)
+    # Should not raise — invalid row (-1) is dropped
+    result_df = result.collect()
+    assert len(result_df) == 2, (
+        f"Expected 2 valid rows after drop_invalid_rows, got {len(result_df)}: {result_df}"
+    )
+    assert result_df["a"].to_list() == [1, 2], (
+        f"Expected [1, 2] after dropping -1, got {result_df['a'].to_list()}"
+    )
+
+    # Verify check_output stored in schema_errors is nw.Expr (Phase 09 contract).
+    # Access via lazy=True with drop_invalid_rows=False to see the check_output.
+    # Force SCHEMA_AND_DATA so data checks run even on lazy frames (matching the
+    # polars test conftest behavior).
+    schema_no_drop = DataFrameSchema(
+        columns={"a": Column(pl.Int64, checks=[Check.greater_than(0)])},
+        drop_invalid_rows=False,
+    )
+    with config_context(validation_depth=ValidationDepth.SCHEMA_AND_DATA):
+        try:
+            schema_no_drop.validate(lf, lazy=True)
+            pytest.fail("Expected SchemaErrors was not raised")
+        except SchemaErrors as err:
+            check_output = err.schema_errors[0].check_output
+            assert isinstance(check_output, nw.Expr), (
+                f"check_output should be nw.Expr after Phase 09 fix, got {type(check_output)}"
+            )

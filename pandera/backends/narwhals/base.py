@@ -389,11 +389,17 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
         )
 
     def drop_invalid_rows(self, check_obj, error_handler):
-        """Remove invalid rows according to failures in error_handler.
+        """Remove invalid rows — pure narwhals, no backend delegation.
 
-        For Ibis: delegates to IbisSchemaBackend.drop_invalid_rows() since
-        Narwhals has no positional-join / row_number abstraction for ibis.
-        For Polars: uses nw.all_horizontal() to combine boolean check_outputs.
+        Builds a pass-mask boolean column per check_output, combines with
+        nw.all_horizontal, filters, and drops the temporary columns.
+        Works identically for polars lazy frames and ibis tables.
+
+        Two check_output conventions are handled:
+        - nw.Expr (DATAFRAME_CHECK path): True=row passes check
+        - nw.LazyFrame/DataFrame with CHECK_OUTPUT_KEY=True meaning "failed"
+          (SERIES_CONTAINS_NULLS / check_nullable): True=row has null (failing).
+          Reconstructed as ~col.is_null() from err.schema.selector.
 
         :param check_obj: The frame to filter.
         :param error_handler: ErrorHandler whose schema_errors carry check_output.
@@ -403,32 +409,55 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
         if not errors:
             return check_obj
 
-        # Detect ibis path: unwrap to native and check type
-        native = nw.to_native(check_obj) if isinstance(check_obj, (nw.LazyFrame, nw.DataFrame)) else check_obj
-        try:
-            import ibis as _ibis
-            if isinstance(native, _ibis.Table):
-                from pandera.backends.ibis.base import IbisSchemaBackend
-                result = IbisSchemaBackend().drop_invalid_rows(native, error_handler)
-                return nw.from_native(result, eager_or_interchange_only=False)
-        except ImportError:
-            pass
+        # Collect (col_name, pass_expr) pairs where pass_expr returns True for valid rows.
+        pass_exprs = []
+        for i, err in enumerate(errors):
+            co = err.check_output
+            col_name = f"__check_output_{i}__"
 
-        # Polars path: use nw.all_horizontal() for boolean reduction (replaces pl.fold)
-        check_outputs = [
-            err.check_output for err in errors
-            if err.check_output is not None
-        ]
-        if not check_outputs:
+            if isinstance(co, nw.Expr):
+                # DATAFRAME_CHECK path: True=pass. Apply ignore_na is handled later.
+                pass_exprs.append((col_name, co, err.check))
+            elif (
+                isinstance(co, (nw.LazyFrame, nw.DataFrame))
+                and CHECK_OUTPUT_KEY in co.collect_schema().names()
+                and err.reason_code == SchemaErrorReason.SERIES_CONTAINS_NULLS
+                and err.schema is not None
+                and hasattr(err.schema, "selector")
+            ):
+                # check_nullable path: True=null (failing). Reconstruct as ~is_null().
+                selector = err.schema.selector
+                not_null_expr = ~nw.col(selector).is_null()
+                pass_exprs.append((col_name, not_null_expr, None))
+
+        if not pass_exprs:
             return check_obj
 
-        # check_outputs are native pl.DataFrame with CHECK_OUTPUT_KEY boolean column
-        merged_pl = pl.DataFrame(
-            {str(i): co[CHECK_OUTPUT_KEY] for i, co in enumerate(check_outputs)}
-        )
-        merged_nw = nw.from_native(merged_pl)
-        valid_rows_nw = merged_nw.select(
-            nw.all_horizontal(*[nw.col(c) for c in merged_pl.columns]).alias("valid_rows")
-        )
-        valid_rows = nw.to_native(valid_rows_nw)["valid_rows"]
-        return check_obj.filter(valid_rows)
+        frame = nw.from_native(check_obj, eager_or_interchange_only=False)
+        bool_cols = [col_name for col_name, _, _ in pass_exprs]
+
+        # Build wide frame: single with_columns call for all exprs.
+        wide = frame.with_columns([
+            expr.alias(col_name)
+            for col_name, expr, _ in pass_exprs
+        ])
+
+        # Apply ignore_na at column level for expr-based checks (avoids ibis SQL issues).
+        ignore_na_cols = [
+            col_name
+            for col_name, _, check in pass_exprs
+            if check is not None and getattr(check, "ignore_na", False)
+        ]
+        if ignore_na_cols:
+            wide = wide.with_columns([
+                (nw.col(c) | nw.col(c).is_null()).alias(c)
+                for c in ignore_na_cols
+            ])
+
+        filtered = wide.filter(nw.all_horizontal(*[nw.col(c) for c in bool_cols]))
+        result = filtered.drop(bool_cols)
+
+        # Preserve input type: native in -> native out, narwhals in -> narwhals out
+        if isinstance(check_obj, (nw.LazyFrame, nw.DataFrame)):
+            return result
+        return nw.to_native(result)

@@ -14,7 +14,7 @@ from pandera.api.narwhals.utils import _to_native
 from pandera.api.polars.container import DataFrameSchema
 from pandera.backends.base import ColumnInfo, CoreCheckResult
 from pandera.backends.narwhals.base import NarwhalsSchemaBackend, _materialize
-from pandera.config import ValidationDepth, ValidationScope, get_config_context
+from pandera.config import ValidationDepth, ValidationScope, config_context, get_config_context
 from pandera.errors import (
     ParserError,
     SchemaDefinitionError,
@@ -126,48 +126,58 @@ class DataFrameSchemaBackend(NarwhalsSchemaBackend):
             (self.run_checks, (sample_lf, schema)),
         ]
 
-        for check, args in core_checks:
-            results = check(*args)  # type: ignore[operator]
-            if isinstance(results, CoreCheckResult):
-                results = [results]
+        # When drop_invalid_rows=True, data checks must run even for lazy/SQL
+        # backends that default to SCHEMA_ONLY validation depth. Force
+        # SCHEMA_AND_DATA so @validate_scope(DATA) checks are not skipped.
+        _check_ctx = (
+            config_context(validation_depth=ValidationDepth.SCHEMA_AND_DATA)
+            if getattr(schema, "drop_invalid_rows", False)
+            else config_context()
+        )
 
-            for result in results:
-                if result.passed:
-                    continue
+        with _check_ctx:
+            for check, args in core_checks:
+                results = check(*args)  # type: ignore[operator]
+                if isinstance(results, CoreCheckResult):
+                    results = [results]
 
-                if result.schema_error is not None:
-                    error = result.schema_error
-                else:
-                    # Unwrap narwhals failure_cases to native at the SchemaError boundary.
-                    # CoreCheckResult carries narwhals wrappers; SchemaError.failure_cases
-                    # is the public API and must be native.
-                    fc = result.failure_cases
-                    if isinstance(fc, nw.LazyFrame):
-                        native_fc = nw.to_native(fc)
-                        if hasattr(native_fc, "execute"):
-                            # SQL-lazy backend (ibis): native is already ibis.Table
-                            fc = native_fc
-                        else:
-                            # Polars lazy: collect to eager then unwrap
-                            fc = nw.to_native(_materialize(fc))
-                    elif isinstance(fc, nw.DataFrame):
-                        fc = nw.to_native(fc)
-                    error = SchemaError(
-                        schema,
-                        data=check_lf,
-                        message=result.message,
-                        failure_cases=fc,
-                        check=result.check,
-                        check_index=result.check_index,
-                        check_output=result.check_output,
-                        reason_code=result.reason_code,
+                for result in results:
+                    if result.passed:
+                        continue
+
+                    if result.schema_error is not None:
+                        error = result.schema_error
+                    else:
+                        # Unwrap narwhals failure_cases to native at the SchemaError boundary.
+                        # CoreCheckResult carries narwhals wrappers; SchemaError.failure_cases
+                        # is the public API and must be native.
+                        fc = result.failure_cases
+                        if isinstance(fc, nw.LazyFrame):
+                            native_fc = nw.to_native(fc)
+                            if hasattr(native_fc, "execute"):
+                                # SQL-lazy backend (ibis): native is already ibis.Table
+                                fc = native_fc
+                            else:
+                                # Polars lazy: collect to eager then unwrap
+                                fc = nw.to_native(_materialize(fc))
+                        elif isinstance(fc, nw.DataFrame):
+                            fc = nw.to_native(fc)
+                        error = SchemaError(
+                            schema,
+                            data=check_lf,
+                            message=result.message,
+                            failure_cases=fc,
+                            check=result.check,
+                            check_index=result.check_index,
+                            check_output=result.check_output,
+                            reason_code=result.reason_code,
+                        )
+                    error_handler.collect_error(
+                        get_error_category(result.reason_code),
+                        result.reason_code,
+                        error,
+                        original_exc=result.original_exc,
                     )
-                error_handler.collect_error(
-                    get_error_category(result.reason_code),
-                    result.reason_code,
-                    error,
-                    original_exc=result.original_exc,
-                )
 
         if error_handler.collected_errors:
             if getattr(schema, "drop_invalid_rows", False):
