@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: Tech Debt Cleanup
 current_plan: 2 of 3
 status: completed
-stopped_at: Completed 09-accumulate-check-outputs-into-single-wide-table-for-narwhals-idiomatic-drop-invalid-rows/09-01-PLAN.md
-last_updated: "2026-03-25T05:23:34.844Z"
+stopped_at: Completed 09-accumulate-check-outputs-into-single-wide-table-for-narwhals-idiomatic-drop-invalid-rows/09-02-PLAN.md
+last_updated: "2026-03-25T05:58:09.633Z"
 last_activity: 2026-03-23 — Plan 06-02 complete (run_check unified, check_nullable scalar-only, SchemaError.failure_cases now native pl.DataFrame/ibis.Table)
 progress:
   total_phases: 9
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 22
-  completed_plans: 21
+  completed_plans: 22
   percent: 100
 ---
 
@@ -92,6 +92,9 @@ Phase 03 decisions:
 - [Phase 09]: xfail(strict=True) for drop_invalid_rows_expr_accumulation — enforces test actually fails now; CI breaks if it passes before 09-02 fix lands
 - [Phase 09]: Polars drop_invalid_rows failure: TypeError: Slicing is not supported on LazyFrame — drop_invalid_rows slices nw.LazyFrame column by index
 - [Phase 09]: Ibis drop_invalid_rows failure: AttributeError: LazyFrame has no attribute mutate — IbisSchemaBackend delegation receives nw.LazyFrame instead of ibis.Table
+- [Phase 09]: container.validate() uses config_context(SCHEMA_AND_DATA) when drop_invalid_rows=True — polars LazyFrame defaults to SCHEMA_ONLY, skipping DATA checks; explicit override forces data validation for row filtering
+- [Phase 09]: ignore_na applied at column level AFTER evaluation in postprocess_expr_output — expr|expr.is_null() on unevaluated nw.Expr causes ibis IsNull to return True for all rows due to SQL nullability semantics
+- [Phase 09]: SERIES_CONTAINS_NULLS check_outputs handled in drop_invalid_rows by reconstructing ~nw.col(selector).is_null() — check_nullable stores True=null (failing), opposite of DATAFRAME_CHECK convention
 
 ### Roadmap Evolution
 
@@ -115,6 +118,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-25T05:23:34.841Z
-Stopped at: Completed 09-accumulate-check-outputs-into-single-wide-table-for-narwhals-idiomatic-drop-invalid-rows/09-01-PLAN.md
+Last session: 2026-03-25T05:58:01.158Z
+Stopped at: Completed 09-accumulate-check-outputs-into-single-wide-table-for-narwhals-idiomatic-drop-invalid-rows/09-02-PLAN.md
 Resume file: None
