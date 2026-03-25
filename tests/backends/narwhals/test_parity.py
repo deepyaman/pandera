@@ -271,7 +271,7 @@ def test_custom_check_ibis_lazy():
 
 
 # ---------------------------------------------------------------------------
-# TEST-09: drop_invalid_rows expr accumulation (RED baseline for Phase 09)
+# TEST-09: drop_invalid_rows — Polars/Ibis parity
 # ---------------------------------------------------------------------------
 
 def test_drop_invalid_rows_expr_accumulation():
@@ -316,3 +316,83 @@ def test_drop_invalid_rows_expr_accumulation():
             assert isinstance(check_output, nw.Expr), (
                 f"check_output should be nw.Expr after Phase 09 fix, got {type(check_output)}"
             )
+
+
+def _setup_drop_invalid_rows_backend(backend_name, monkeypatch):
+    """Set up schema, frame, and collect fn for drop_invalid_rows parity tests.
+
+    Returns (schema, frame, collect_fn) where collect_fn(result) -> list of
+    "a" column values, unified across Polars and Ibis.
+    """
+    if backend_name == "polars":
+        from pandera.api.polars.container import DataFrameSchema as PlSchema
+        from pandera.api.polars.components import Column as PlColumn
+
+        def make(data, checks, nullable=False, drop_invalid_rows=True):
+            return (
+                PlSchema(
+                    columns={"a": PlColumn(pl.Int64, checks, nullable=nullable)},
+                    drop_invalid_rows=drop_invalid_rows,
+                ),
+                pl.LazyFrame({"a": data}),
+                lambda r: r.collect()["a"].to_list(),
+            )
+
+        return make
+    else:
+        import ibis
+        import ibis.expr.datatypes as dt
+
+        ibis_backend = backend_name.split("_")[1]
+        monkeypatch.setattr(ibis.options, "default_backend", None)
+        ibis.set_backend(ibis_backend)
+
+        from pandera.api.ibis.container import DataFrameSchema as IbisSchema
+        from pandera.api.ibis.components import Column as IbisColumn
+
+        def make(data, checks, nullable=False, drop_invalid_rows=True):
+            return (
+                IbisSchema(
+                    columns={"a": IbisColumn(dt.Int64, checks, nullable=nullable)},
+                    drop_invalid_rows=drop_invalid_rows,
+                ),
+                ibis.memtable({"a": data}, schema=ibis.schema([("a", "int64")])),
+                lambda r: [
+                    None if (v != v) else (int(v) if v == int(v) else v)
+                    for v in r.execute()["a"].tolist()
+                ],
+            )
+
+        return make
+
+
+@pytest.mark.parametrize("backend_name", ["polars", "ibis_duckdb", "ibis_sqlite"])
+def test_drop_invalid_rows_parity(backend_name, monkeypatch):
+    """drop_invalid_rows=True, lazy=True filters invalid rows for both Polars and Ibis.
+
+    Verifies the nw.all_horizontal accumulation path works identically across backends.
+    """
+    make = _setup_drop_invalid_rows_backend(backend_name, monkeypatch)
+    schema, frame, collect = make([-1, 0, 1, 2], Check.ge(0))
+    result = schema.validate(frame, lazy=True)
+    assert collect(result) == [0, 1, 2]
+
+
+@pytest.mark.parametrize("backend_name", ["polars", "ibis_duckdb", "ibis_sqlite"])
+def test_drop_invalid_rows_lazy_false_raises_parity(backend_name, monkeypatch):
+    """drop_invalid_rows=True with lazy=False raises SchemaDefinitionError on all backends."""
+    from pandera.errors import SchemaDefinitionError
+
+    make = _setup_drop_invalid_rows_backend(backend_name, monkeypatch)
+    schema, frame, _ = make([-1, 1, 2], Check.ge(0))
+    with pytest.raises(SchemaDefinitionError):
+        schema.validate(frame, lazy=False)
+
+
+@pytest.mark.parametrize("backend_name", ["polars", "ibis_duckdb", "ibis_sqlite"])
+def test_drop_invalid_rows_nullable_parity(backend_name, monkeypatch):
+    """drop_invalid_rows with nullable=True: null rows pass, invalid non-null rows are dropped."""
+    make = _setup_drop_invalid_rows_backend(backend_name, monkeypatch)
+    schema, frame, collect = make([None, -1, 0, 1], Check.ge(0), nullable=True)
+    result = schema.validate(frame, lazy=True)
+    assert collect(result) == [None, 0, 1]
