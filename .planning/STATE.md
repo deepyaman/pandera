@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: Tech Debt Cleanup
 current_plan: 2 of 3
 status: completed
-stopped_at: Completed 08-fix-lazy-true-critical-regressions/08-01-PLAN.md
-last_updated: "2026-03-25T01:59:47.002Z"
+stopped_at: Completed 08-fix-lazy-true-critical-regressions/08-02-PLAN.md
+last_updated: "2026-03-25T02:09:55.494Z"
 last_activity: 2026-03-23 — Plan 06-02 complete (run_check unified, check_nullable scalar-only, SchemaError.failure_cases now native pl.DataFrame/ibis.Table)
 progress:
   total_phases: 8
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 20
-  completed_plans: 19
+  completed_plans: 20
   percent: 100
 ---
 
@@ -87,6 +87,8 @@ Phase 03 decisions:
 - [Phase 07]: _materialize import removed from error_handler.py — Phase 6 contract ensures failure_cases is always native at SchemaError boundary, so nw.from_native wrapping handles all types
 - [Phase 07]: ROADMAP progress table restructured to reflect current 7-phase layout (v1.0 milestones moved to details block)
 - [Phase 08-fix-lazy-true-critical-regressions]: ibis MISSING-01 test is GREEN (Phase 6 already fixed ibis.Table rewrap); MISSING-02 requires native=True bool-returning check to trigger failure_cases=False path
+- [Phase 08-fix-lazy-true-critical-regressions]: pl.DataFrame routes to eager polars path in failure_cases_metadata — _is_lazy_or_sql returns False for nw.DataFrame wrapping pl.DataFrame (no .execute()); failure_case column is Utf8 by design
+- [Phase 08-fix-lazy-true-critical-regressions]: isinstance(failure_cases, str) guard removed from _count_failure_cases — dead code after try/except TypeError since nw.from_native(str) also raises TypeError, returning 1 via except branch
 
 ### Roadmap Evolution
 
@@ -109,6 +111,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-25T01:59:46.999Z
-Stopped at: Completed 08-fix-lazy-true-critical-regressions/08-01-PLAN.md
+Last session: 2026-03-25T02:09:55.492Z
+Stopped at: Completed 08-fix-lazy-true-critical-regressions/08-02-PLAN.md
 Resume file: None

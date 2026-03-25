@@ -30,7 +30,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 | 5. Expression-based check protocol | 3/3 | Complete | 2026-03-23 |
 | 6. Eliminate unnecessary materialization | 3/3 | Complete | 2026-03-23 |
 | 7. v1.0 Tech Debt Cleanup | 2/2 | Complete   | 2026-03-24 |
-| 8. Fix lazy=True critical regressions | 1/2 | In Progress|  |
+| 8. Fix lazy=True critical regressions | 2/2 | Complete   | 2026-03-25 |
 
 ### Phase 1: PR Review Architecture Fixes
 
@@ -119,7 +119,7 @@ Plans:
 **Requirements:** MISSING-01, MISSING-02 (gap closure from v1.0 audit)
 **Gap Closure:** Closes MISSING-01, MISSING-02, FLOW-BROKEN-01, FLOW-BROKEN-02
 **Depends on:** Phase 7
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 08-01-PLAN.md — RED baseline: write 3 failing regression tests covering MISSING-01 (polars + ibis per-row failure_cases) and MISSING-02 (bool scalar crash)
