@@ -1,5 +1,6 @@
 """Base schema backend for Narwhals."""
 
+import functools
 import warnings
 from collections import defaultdict
 
@@ -228,7 +229,11 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
                 # --- Eager polars path (nw.DataFrame wrapping pl.DataFrame) ---
                 # Keep existing polars-based logic — works correctly for eager inputs.
                 # Row index is derivable from check_output.
-                import polars as pl
+                # This branch is only reached for eager polars DataFrames, so polars is present.
+                try:
+                    import polars as pl
+                except ImportError:
+                    pl = None  # type: ignore[assignment]
                 fc_eager = _materialize(fc)
                 pl_fc = pl.from_arrow(fc_eager.to_arrow())
 
@@ -282,7 +287,10 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
 
             else:
                 # --- Scalar path (Python scalars, strings, etc.) ---
-                import polars as pl
+                try:
+                    import polars as pl
+                except ImportError:
+                    pl = None  # type: ignore[assignment]
                 scalar_failure_cases = defaultdict(list)
                 scalar_failure_cases["failure_case"].append(err.failure_cases)
                 scalar_failure_cases["schema_context"].append(
@@ -305,14 +313,20 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
         if failure_case_collection:
             first = failure_case_collection[0]
             if hasattr(first, "union"):  # ibis.Table
-                import functools
                 failure_cases = functools.reduce(lambda a, b: a.union(b), failure_case_collection)
             else:
-                import polars as pl
+                # All items are pl.DataFrame or pl.LazyFrame — polars is present here.
+                try:
+                    import polars as pl
+                except ImportError:
+                    pl = None  # type: ignore[assignment]
                 failure_cases = pl.concat(failure_case_collection)  # pl.LazyFrame or pl.DataFrame
         else:
-            import polars as pl
-            failure_cases = pl.DataFrame()
+            try:
+                import polars as pl
+            except ImportError:
+                pl = None  # type: ignore[assignment]
+            failure_cases = pl.DataFrame() if pl is not None else None
 
         error_handler = ErrorHandler()
         # Only collect errors with a valid reason_code; errors without one
