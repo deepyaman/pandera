@@ -1,37 +1,35 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: Tech Debt Cleanup
-current_plan: 2 of 3
-status: completed
-stopped_at: Completed 09-accumulate-check-outputs-into-single-wide-table-for-narwhals-idiomatic-drop-invalid-rows/09-02-PLAN.md
-last_updated: "2026-03-25T13:40:03.259Z"
-last_activity: 2026-03-23 — Plan 06-02 complete (run_check unified, check_nullable scalar-only, SchemaError.failure_cases now native pl.DataFrame/ibis.Table)
+milestone: v1.2
+milestone_name: PR Review Cleanup & Test Strategy
+current_plan: —
+status: defining requirements
+stopped_at: —
+last_updated: "2026-03-29T00:00:00.000Z"
+last_activity: 2026-03-29 — Milestone v1.2 started
 progress:
-  total_phases: 9
-  completed_phases: 9
-  total_plans: 22
-  completed_plans: 22
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-15 after v1.0 milestone)
+See: .planning/PROJECT.md (updated 2026-03-29 after v1.2 milestone start)
 
 **Core value:** Users can validate any Narwhals-supported dataframe library through a single, consistent backend — reducing maintenance burden and unlocking lazy validation and future library support for free.
-**Current focus:** Remaining PR Review Fixes (Phase 02) — eliminating polars-specific coupling and fragile concat in checks.py, plus custom checks delegation and check_dtype backend logic.
+**Current focus:** v1.2 PR Review Cleanup & Test Strategy — addressing review 4027330818 feedback
 
 ## Current Position
 
-Phase: 06-eliminate-unnecessary-materialization-lazy-first-failure-cases-and-check-output
-Current Plan: 2 of 3
-Status: Plan 06-02 complete — run_check unified (no _is_ibis_result), check_nullable scalar-only, SchemaError.failure_cases now native
-Last activity: 2026-03-23 — Plan 06-02 complete (run_check unified, check_nullable scalar-only, SchemaError.failure_cases now native pl.DataFrame/ibis.Table)
-
-Progress: [██████████] 100%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-29 — Milestone v1.2 started
 
 ## Accumulated Context
 
@@ -105,6 +103,7 @@ Phase 03 decisions:
 - Phase 03 added: Fix IbisCheckBackend delegation (approach TBD at planning time)
 - Phase 06 added: Eliminate unnecessary materialization — lazy-first failure_cases and check_output
 - Phase 09 added: Accumulate check outputs into single wide table for narwhals-idiomatic drop_invalid_rows
+- Phase 01 added (v1.2): Address PR review 4027330818 feedback on the Narwhals backend
 
 ### Pending Todos
 

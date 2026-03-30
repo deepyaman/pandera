@@ -8,6 +8,8 @@ The v1.0 milestone shipped a complete Polars + Ibis narwhals backend with auto-d
 
 The v1.1 milestone hardened the architecture: unified expression-based check protocol (`nw.Expr` throughout), lazy-first evaluation with a single materialization point for the pass/fail scalar, native `ibis.Table` failure_cases at schema error boundaries, and `drop_invalid_rows` reimplemented as pure narwhals `nw.all_horizontal` accumulation.
 
+The v1.2 milestone addresses PR review 4027330818: unified native type detection, backend isolation, elimination of unnecessary eager execution, cohesive CI test strategy, and documentation polish.
+
 ## Core Value
 
 Users can validate any Narwhals-supported dataframe library through a single, consistent backend — reducing maintenance burden and unlocking lazy validation and future library support for free.
@@ -38,6 +40,16 @@ Users can validate any Narwhals-supported dataframe library through a single, co
 
 ### Active
 
+**v1.2 PR Review Cleanup:**
+- [ ] Unified native type detection utilities (TYPES-01 – TYPES-03)
+- [ ] Backend isolation — no Polars code or pandera.api.polars imports in narwhals/ (CLEAN-01 – CLEAN-03)
+- [ ] Eliminate unnecessary .collect() / eager execution (EAGER-01 – EAGER-02)
+- [ ] Fix import organization — all inner imports moved to top-level (CLEAN-04)
+- [ ] Custom checks support investigation and fix (CHECKS-01)
+- [ ] Documentation: "native" param scope, "Narwhals" capitalization (DOCS-01 – DOCS-02)
+- [ ] Cohesive CI test strategy: existing + Narwhals-backed Polars/Ibis (TEST-01 – TEST-03)
+
+**Deferred (future milestones):**
 - [ ] pandas validation working via Narwhals backend (including lazy mode via Narwhals lazy graph)
 - [ ] PySpark validation working via Narwhals backend (if feasible)
 - [ ] `add_missing_columns` parser (FEAT-01)
@@ -98,5 +110,18 @@ Known remaining items:
 | `NarwhalsErrorHandler` subclass (not `BaseErrorHandler` directly) | Allows `_count_failure_cases` override without ibis imports in base | ✓ Good — v1.1 |
 | `polars` imported lazily in `base.py` (not module-level) | polars is optional dep; ibis-only users shouldn't need it | ✓ Good — v1.1 |
 
+## Current Milestone: v1.2 PR Review Cleanup & Test Strategy
+
+**Goal:** Address all feedback from PR review 4027330818 — eliminate backend-specific coupling, unify native type detection, fix eager execution, and establish a cohesive CI test strategy.
+
+**Target features:**
+- Unified native type detection utilities replacing scattered isinstance/hasattr checks
+- Backend isolation: no Polars-specific code or pandera.api.polars imports in narwhals/
+- No unnecessary .collect() on large/lazy frames
+- Fix import organization (inner → top-level)
+- Investigate and fix custom checks support
+- Documentation: "native" param only applies to Narwhals; capitalize "Narwhals" consistently
+- Cohesive CI: existing backends work without Narwhals; Narwhals backend tests parametrize across Polars DataFrame/LazyFrame + Ibis
+
 ---
-*Last updated: 2026-03-25 after v1.1 milestone*
+*Last updated: 2026-03-29 after v1.2 milestone start*
