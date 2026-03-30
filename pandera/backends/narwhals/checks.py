@@ -184,19 +184,17 @@ class NarwhalsCheckBackend(BaseCheckBackend):
         check_output: bool,
     ) -> CheckResult:
         """Postprocesses bool check output into a CheckResult."""
-        # SQL-lazy backends (ibis) do not support nw.from_dict — use polars
-        # as the eager namespace for bool scalar results.
+        # SQL-lazy backends (ibis) do not support nw.from_dict with their
+        # native namespace — fall back to pyarrow as the eager intermediate.
         try:
             ns = nw.get_native_namespace(check_obj.frame)
             lf = nw.from_dict(
                 {CHECK_OUTPUT_KEY: [check_output]}, native_namespace=ns
             ).lazy()
         except (ValueError, AttributeError):
-            import polars as pl
-            lf = nw.from_native(
-                pl.LazyFrame({CHECK_OUTPUT_KEY: [check_output]}),
-                eager_or_interchange_only=False,
-            )
+            lf = nw.from_dict(
+                {CHECK_OUTPUT_KEY: [check_output]}, backend="pyarrow"
+            ).lazy()
         return CheckResult(
             check_output=lf,
             check_passed=lf,
