@@ -6,6 +6,7 @@ from typing import Any, Optional, Union
 import narwhals.stable.v1 as nw
 
 from pandera import dtypes, errors
+from pandera.api.narwhals.utils import _materialize
 from pandera.dtypes import immutable
 from pandera.engines import engine
 
@@ -60,13 +61,20 @@ class DataType(dtypes.DataType):
 
         try:
             lf = self.coerce(data_container)
-            lf.collect()
+            # Bounded probe: exercise the cast with 1 row instead of full frame.
+            # For nw.LazyFrame (polars): head(1).collect() stays in narwhals.
+            # For nw.DataFrame (ibis): _materialize(head(1)) handles .execute().
+            if isinstance(lf, nw.LazyFrame):
+                lf.head(1).collect()
+            else:
+                _materialize(lf.head(1))
             return lf
         except COERCION_ERRORS as exc:
             key = data_container.key
             _key = "" if key == "*" else f"'{key}' in"
-            # Produce native failure_cases: collect original frame as native
-            failure_cases = _to_native(data_container.frame.collect())
+            # Produce native failure_cases: use _materialize to handle both polars
+            # (nw.LazyFrame -> collect) and ibis (nw.DataFrame -> .execute()) backends.
+            failure_cases = _to_native(_materialize(data_container.frame))
             if key != "*":
                 try:
                     failure_cases = failure_cases.select(key)
