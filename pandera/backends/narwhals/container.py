@@ -333,24 +333,19 @@ class DataFrameSchemaBackend(NarwhalsSchemaBackend):
     ):
         """Collects all schema components to use for validation."""
 
-        # Determine the Column class from the schema's own package to avoid
-        # hardcoding a framework-specific import in a backend-agnostic method.
-        # TODO: push synthetic column construction into the schema API layer
-        # (e.g., schema.infer_columns(frame_column_names)) so the backend
-        # doesn't need to know the Column type at all.
-        import importlib
-        _pkg = schema.__class__.__module__.rsplit(".", 1)[0]
-        Column = importlib.import_module(f"{_pkg}.components").Column
-
-        columns: dict[str, Column] = schema.columns
+        columns: dict = schema.columns
         frame_column_names = check_obj.collect_schema().names()
 
         if not schema.columns and schema.dtype is not None:
             # set schema components to dataframe dtype if columns are not
             # specified but the dataframe-level dtype is specified.
-            columns = {}
-            for col_name in frame_column_names:
-                columns[col_name] = Column(schema.dtype, name=str(col_name))
+            columns = {
+                col_name: col
+                for col_name, col in zip(
+                    frame_column_names,
+                    schema.infer_columns(frame_column_names),
+                )
+            }
 
         schema_components = []
         for col_name, col in columns.items():
