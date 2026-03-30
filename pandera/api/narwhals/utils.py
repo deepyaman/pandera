@@ -29,3 +29,13 @@ def _materialize(frame) -> nw.DataFrame:
         return nw.from_native(native.execute())
     # Fallback: already an eager DataFrame
     return frame
+
+
+def _is_lazy(frame) -> bool:
+    """True for nw.LazyFrame (polars-lazy) or nw.DataFrame wrapping a SQL-lazy backend (ibis)."""
+    if isinstance(frame, nw.LazyFrame):
+        return True
+    if isinstance(frame, nw.DataFrame):
+        native = nw.to_native(frame)
+        return hasattr(native, "execute")  # ibis.Table has .execute(); polars DataFrame does not
+    return False

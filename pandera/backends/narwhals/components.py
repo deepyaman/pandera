@@ -8,7 +8,7 @@ import narwhals.stable.v1 as nw
 
 from pandera.api.base.error_handler import get_error_category
 from pandera.api.narwhals.error_handler import ErrorHandler
-from pandera.api.narwhals.utils import _to_native
+from pandera.api.narwhals.utils import _is_lazy, _to_native
 from pandera.backends.base import CoreCheckResult
 from pandera.backends.narwhals.base import NarwhalsSchemaBackend, _materialize
 from pandera.config import ValidationScope
@@ -337,10 +337,9 @@ class ColumnBackend(NarwhalsSchemaBackend):
                     # For nw.DataFrame: to_native directly (polars → pl.DataFrame, ibis → ibis.Table).
                     fc = result.failure_cases
                     if isinstance(fc, nw.LazyFrame):
-                        native_fc = nw.to_native(fc)
-                        if hasattr(native_fc, "execute"):
-                            # SQL-lazy backend (ibis): native is already ibis.Table
-                            fc = native_fc
+                        if hasattr(nw.to_native(fc), "execute"):
+                            # SQL-lazy backend (ibis): nw.to_native returns ibis.Table directly
+                            fc = nw.to_native(fc)
                         else:
                             # Polars lazy: collect to eager then unwrap
                             fc = nw.to_native(_materialize(fc))

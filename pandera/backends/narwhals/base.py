@@ -6,7 +6,7 @@ from collections import defaultdict
 import narwhals.stable.v1 as nw
 
 from pandera.api.narwhals.error_handler import ErrorHandler
-from pandera.api.narwhals.utils import _materialize
+from pandera.api.narwhals.utils import _is_lazy, _materialize
 from pandera.backends.base import BaseSchemaBackend, CoreCheckResult
 from pandera.backends.narwhals.checks import NarwhalsCheckBackend
 from pandera.constants import CHECK_OUTPUT_KEY
@@ -17,15 +17,6 @@ from pandera.errors import (
     SchemaWarning,
 )
 
-
-def _is_lazy_or_sql(fc) -> bool:
-    """True for polars-lazy (nw.LazyFrame) or SQL-lazy (nw.DataFrame wrapping ibis.Table)."""
-    if isinstance(fc, nw.LazyFrame):
-        return True
-    if isinstance(fc, nw.DataFrame):
-        native = nw.to_native(fc)
-        return hasattr(native, "execute")  # ibis.Table has .execute(); polars DataFrame does not
-    return False
 
 
 class NarwhalsSchemaBackend(BaseSchemaBackend):
@@ -206,7 +197,7 @@ class NarwhalsSchemaBackend(BaseSchemaBackend):
             except TypeError:
                 pass
 
-            if isinstance(fc, (nw.LazyFrame, nw.DataFrame)) and _is_lazy_or_sql(fc):
+            if isinstance(fc, (nw.LazyFrame, nw.DataFrame)) and _is_lazy(fc):
                 # --- Lazy/SQL path (polars-lazy nw.LazyFrame or ibis nw.DataFrame) ---
                 # Use narwhals ops only — no Arrow roundtrip, no polars import in this path.
                 # Row index is always None — no forced materialization for ordering.
