@@ -11,13 +11,13 @@ Requirements for the PR Review Cleanup & Test Strategy milestone. Each maps to r
 
 - [ ] **TYPES-01**: Unified constants (`EAGER_NATIVE_TYPES`, `LAZY_NATIVE_TYPES`, or equivalent) define which native frame types are eager vs lazy — used everywhere in place of ad-hoc `isinstance`/`hasattr` checks
 - [ ] **TYPES-02**: `_is_lazy(frame)` (or equivalent) utility replaces all scattered `hasattr(native, "execute")` and `isinstance(fc, nw.LazyFrame)` checks
-- [ ] **TYPES-03**: Failure case result handling in `base.py`, `container.py`, and `components.py` uses a clean dispatch pattern backed by TYPES-01/02 rather than complex if/elif/else blocks
+- [x] **TYPES-03**: Failure case result handling in `base.py`, `container.py`, and `components.py` uses a clean dispatch pattern backed by TYPES-01/02 rather than complex if/elif/else blocks
 
 ### Backend Isolation
 
 - [ ] **CLEAN-01**: `narwhals/checks.py` contains no Polars-specific imports or code paths
 - [ ] **CLEAN-02**: `narwhals/container.py` does not import from `pandera.api.polars.components`
-- [ ] **CLEAN-03**: `narwhals/base.py` does not produce code paths that require Polars installed when validating Ibis frames (base.py:294 branch)
+- [x] **CLEAN-03**: `narwhals/base.py` does not produce code paths that require Polars installed when validating Ibis frames (base.py:294 branch)
 - [ ] **CLEAN-04**: All inner imports moved to top-level (stdlib in `container.py:449`; narwhals engine imports in `narwhals_engine.py:34,56`; any others)
 
 ### Eager Execution
@@ -73,10 +73,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | TYPES-01 | Phase 1 | Pending |
 | TYPES-02 | Phase 1 | Pending |
-| TYPES-03 | Phase 1 | Pending |
+| TYPES-03 | Phase 1 | Complete |
 | CLEAN-01 | Phase 1 | Pending |
 | CLEAN-02 | Phase 1 | Pending |
-| CLEAN-03 | Phase 1 | Pending |
+| CLEAN-03 | Phase 1 | Complete |
 | CLEAN-04 | Phase 1 | Pending |
 | EAGER-01 | Phase 1 | Pending |
 | EAGER-02 | Phase 1 | Pending |

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PR Review Cleanup & Test Strategy
-status: ready_to_execute
-stopped_at: Phase 1 planned — 5 plans across 2 waves, all requirements covered
-last_updated: "2026-03-30T03:00:00.000Z"
-last_activity: 2026-03-30 — Phase 1 planned (5 plans, 2 waves); verification passed
+status: executing
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-03-30T12:54:42.669Z"
+last_activity: 2026-03-30
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 5
-  completed_plans: 0
+  completed_plans: 5
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29 after v1.2 milestone start)
 
 **Core value:** Users can validate any Narwhals-supported dataframe library through a single, consistent backend — reducing maintenance burden and unlocking lazy validation and future library support for free.
-**Current focus:** v1.2 PR Review Cleanup & Test Strategy — Phase 1 ready to plan
+**Current focus:** Phase 01 — structural-cleanup
 
 ## Current Position
 
-Phase: 1 of 3 (Structural Cleanup)
-Plan: —
-Status: Ready to plan
-Last activity: 2026-03-29 — Roadmap created; 15 requirements mapped to 3 phases
+Phase: 01 (structural-cleanup) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-03-30
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -47,6 +47,7 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 *Updated after each plan completion*
+| Phase 01 P03 | 8 minutes | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -57,6 +58,7 @@ Key decisions from v1.1 still relevant:
 - `polars` imported lazily in `base.py` — polars is optional dep; ibis-only users should not need it
 - `nw.from_native(failure_cases, eager_only=False)` unified pattern for failure case counting
 - Single materialization point for scalar bool pass/fail; failure_cases stay lazy through check loop
+- [Phase 01]: All inner polars imports in base.py guarded with try/except ImportError; functools hoisted to module level
 
 ### Pending Todos
 
@@ -69,6 +71,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-30T03:00:00.000Z
-Stopped at: Phase 1 fully planned — 5 plans verified, ready to execute
-Resume file: .planning/phases/01-structural-cleanup/
+Last session: 2026-03-30T12:54:42.666Z
+Stopped at: Completed 01-03-PLAN.md
+Resume file: None

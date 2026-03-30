@@ -42,7 +42,7 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 
 **Milestone Goal:** Address all feedback from PR review 4027330818 — eliminate backend-specific coupling, unify native type detection, fix eager execution, fix custom checks, polish documentation, and establish a cohesive CI test strategy.
 
-- [ ] **Phase 1: Structural Cleanup** — Unify type detection, isolate backend code, eliminate eager execution, fix custom checks
+- [x] **Phase 1: Structural Cleanup** — Unify type detection, isolate backend code, eliminate eager execution, fix custom checks (completed 2026-03-30)
 - [ ] **Phase 2: Documentation Polish** — Clarify `native` param scope, fix "Narwhals" capitalization everywhere
 - [ ] **Phase 3: CI Test Strategy** — Ensure existing backends run without Narwhals; parametrize Narwhals tests across all frame types; document CI matrix
 
@@ -61,11 +61,11 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 **Plans**: 5 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Create _is_lazy utility, hoist inner imports, add TYPE_CHECKING guard (TYPES-01, TYPES-02, CLEAN-04)
-- [ ] 01-02-PLAN.md — Replace full-frame collect in try_coerce with head(1) probe; audit container/components materializations (EAGER-01, EAGER-02)
-- [ ] 01-03-PLAN.md — Rewrite failure_cases_metadata dispatch to use _is_lazy; eliminate unconditional polars imports from base.py (TYPES-03, CLEAN-03)
-- [ ] 01-04-PLAN.md — Add infer_columns() to DataFrameSchema base; wire container.py; add CLEAN-01/CLEAN-02 arch tests (CLEAN-01, CLEAN-02)
-- [ ] 01-05-PLAN.md — Fix _normalize_native_output for pl.Series/pl.DataFrame returns; add regression tests (CHECKS-01)
+- [x] 01-01-PLAN.md — Create _is_lazy utility, hoist inner imports, add TYPE_CHECKING guard (TYPES-01, TYPES-02, CLEAN-04)
+- [x] 01-02-PLAN.md — Replace full-frame collect in try_coerce with head(1) probe; audit container/components materializations (EAGER-01, EAGER-02)
+- [x] 01-03-PLAN.md — Rewrite failure_cases_metadata dispatch to use _is_lazy; eliminate unconditional polars imports from base.py (TYPES-03, CLEAN-03)
+- [x] 01-04-PLAN.md — Add infer_columns() to DataFrameSchema base; wire container.py; add CLEAN-01/CLEAN-02 arch tests (CLEAN-01, CLEAN-02)
+- [x] 01-05-PLAN.md — Fix _normalize_native_output for pl.Series/pl.DataFrame returns; add regression tests (CHECKS-01)
 
 ### Phase 2: Documentation Polish
 **Goal**: Docstrings and comments accurately describe the `native` parameter's scope and consistently spell "Narwhals" with a capital N
@@ -98,6 +98,6 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Structural Cleanup | 0/5 | Not started | - |
+| 1. Structural Cleanup | 5/5 | Complete   | 2026-03-30 |
 | 2. Documentation Polish | 0/TBD | Not started | - |
 | 3. CI Test Strategy | 0/TBD | Not started | - |
