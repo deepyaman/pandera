@@ -79,9 +79,11 @@ class NarwhalsCheckBackend(BaseCheckBackend):
 
     @staticmethod
     def _normalize_native_output(out, check_obj: NarwhalsData):
-        """Normalize ibis outputs from native=True checks to narwhals types.
+        """Normalize native outputs from native=True checks to narwhals types.
 
-        Polars and bool outputs pass through unchanged.
+        Handles ibis expression types (BooleanScalar, BooleanColumn, Table) and
+        polars native types (pl.Series of booleans, pl.DataFrame with CHECK_OUTPUT_KEY).
+        Bool scalars and other non-frame types pass through unchanged.
         """
         try:
             import ibis
@@ -98,7 +100,23 @@ class NarwhalsCheckBackend(BaseCheckBackend):
                 return nw.from_native(out, eager_or_interchange_only=False)
         except ImportError:
             pass
-        return out
+
+        # Handle polars native return types from native=True checks.
+        # pl.Series of booleans: treat as a per-row boolean mask — wrap into a
+        # DataFrame with CHECK_OUTPUT_KEY so postprocess_lazyframe_output can handle it.
+        # pl.DataFrame: wrap directly into narwhals (must contain CHECK_OUTPUT_KEY column).
+        try:
+            import polars as pl
+            if isinstance(out, pl.Series):
+                return nw.from_native(
+                    out.to_frame(CHECK_OUTPUT_KEY), eager_only=True
+                )
+            elif isinstance(out, pl.DataFrame):
+                return nw.from_native(out, eager_only=True)
+        except ImportError:
+            pass
+
+        return out  # bool or other scalar — handled by postprocess_bool_output
 
     def postprocess(self, check_obj: NarwhalsData, check_output):
         """Postprocesses the result of applying the check function."""
