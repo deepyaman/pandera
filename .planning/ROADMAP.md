@@ -58,10 +58,14 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
   3. `narwhals_engine.py` and `container.py`/`components.py` do not call `.collect()` on entire frames for coerce, concat, or dtype-check operations
   4. All inner imports (stdlib and narwhals engine) in `container.py` and `narwhals_engine.py` are moved to module-level top-of-file
   5. A user-defined custom check passes validation through the Narwhals backend for both `pl.DataFrame` and `ibis.Table` inputs, and a regression test covers this case
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 1 to break down)
+- [ ] 01-01-PLAN.md — Create _is_lazy utility, hoist inner imports, add TYPE_CHECKING guard (TYPES-01, TYPES-02, CLEAN-04)
+- [ ] 01-02-PLAN.md — Replace full-frame collect in try_coerce with head(1) probe; audit container/components materializations (EAGER-01, EAGER-02)
+- [ ] 01-03-PLAN.md — Rewrite failure_cases_metadata dispatch to use _is_lazy; eliminate unconditional polars imports from base.py (TYPES-03, CLEAN-03)
+- [ ] 01-04-PLAN.md — Add infer_columns() to DataFrameSchema base; wire container.py; add CLEAN-01/CLEAN-02 arch tests (CLEAN-01, CLEAN-02)
+- [ ] 01-05-PLAN.md — Fix _normalize_native_output for pl.Series/pl.DataFrame returns; add regression tests (CHECKS-01)
 
 ### Phase 2: Documentation Polish
 **Goal**: Docstrings and comments accurately describe the `native` parameter's scope and consistently spell "Narwhals" with a capital N
@@ -94,6 +98,6 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Structural Cleanup | 0/TBD | Not started | - |
+| 1. Structural Cleanup | 0/5 | Not started | - |
 | 2. Documentation Polish | 0/TBD | Not started | - |
 | 3. CI Test Strategy | 0/TBD | Not started | - |
