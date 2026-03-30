@@ -509,6 +509,66 @@ class TestCustomChecksIbis:
         assert received_keys == ["*"]
 
 
+class TestCustomChecksPolarsRowLevel:
+    """Custom native=True checks returning row-level pl.Series or pl.DataFrame.
+
+    These are REGRESSION tests for CHECKS-01: _normalize_native_output previously
+    raised TypeError("output type of check_fn not recognized") for pl.Series and
+    pl.DataFrame returns from native=True checks.
+    """
+
+    @staticmethod
+    def _series_all_positive(frame: pl.LazyFrame, key: str) -> pl.Series:
+        """Returns a pl.Series of booleans — one bool per row."""
+        return frame.collect()[key] > 0
+
+    @staticmethod
+    def _dataframe_all_positive(frame: pl.LazyFrame, key: str) -> pl.DataFrame:
+        """Returns a pl.DataFrame with a CHECK_OUTPUT_KEY boolean column."""
+        from pandera.constants import CHECK_OUTPUT_KEY
+
+        collected = frame.collect()
+        return collected.select(
+            (pl.col(key) > 0).alias(CHECK_OUTPUT_KEY)
+        )
+
+    def test_native_series_check_passes(self, polars_df):
+        """native=True check returning pl.Series passes when all rows satisfy condition."""
+        schema = pa_pl.DataFrameSchema(
+            {"x": pa_pl.Column(int, pa_pl.Check(self._series_all_positive, native=True))}
+        )
+        with config_context(validation_depth=ValidationDepth.SCHEMA_AND_DATA):
+            result = schema.validate(polars_df)
+        assert isinstance(result, pl.DataFrame)
+
+    def test_native_series_check_fails(self):
+        """native=True check returning pl.Series fails when some rows fail condition."""
+        schema = pa_pl.DataFrameSchema(
+            {"x": pa_pl.Column(int, pa_pl.Check(self._series_all_positive, native=True))}
+        )
+        with config_context(validation_depth=ValidationDepth.SCHEMA_AND_DATA):
+            with pytest.raises(SchemaError):
+                schema.validate(pl.DataFrame({"x": [-1, 2, 3]}))
+
+    def test_native_dataframe_check_passes(self, polars_df):
+        """native=True check returning pl.DataFrame passes when all rows satisfy condition."""
+        schema = pa_pl.DataFrameSchema(
+            {"x": pa_pl.Column(int, pa_pl.Check(self._dataframe_all_positive, native=True))}
+        )
+        with config_context(validation_depth=ValidationDepth.SCHEMA_AND_DATA):
+            result = schema.validate(polars_df)
+        assert isinstance(result, pl.DataFrame)
+
+    def test_native_dataframe_check_fails(self):
+        """native=True check returning pl.DataFrame fails when some rows fail condition."""
+        schema = pa_pl.DataFrameSchema(
+            {"x": pa_pl.Column(int, pa_pl.Check(self._dataframe_all_positive, native=True))}
+        )
+        with config_context(validation_depth=ValidationDepth.SCHEMA_AND_DATA):
+            with pytest.raises(SchemaError):
+                schema.validate(pl.DataFrame({"x": [-1, 2, 3]}))
+
+
 # ===========================================================================
 # 6. Nullable and unique constraints
 # ===========================================================================

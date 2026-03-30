@@ -102,17 +102,27 @@ class NarwhalsCheckBackend(BaseCheckBackend):
             pass
 
         # Handle polars native return types from native=True checks.
-        # pl.Series of booleans: treat as a per-row boolean mask — wrap into a
-        # DataFrame with CHECK_OUTPUT_KEY so postprocess_lazyframe_output can handle it.
-        # pl.DataFrame: wrap directly into narwhals (must contain CHECK_OUTPUT_KEY column).
+        # Both pl.Series and pl.DataFrame are attached to the original frame so that
+        # postprocess_lazyframe_output receives a WIDE table (original columns +
+        # CHECK_OUTPUT_KEY) — the same shape produced by the ibis BooleanColumn path.
+        # - pl.Series of booleans: aliased to CHECK_OUTPUT_KEY and added via with_columns.
+        # - pl.DataFrame with CHECK_OUTPUT_KEY column: the boolean column is extracted and
+        #   then added to the original frame in the same way.
         try:
             import polars as pl
-            if isinstance(out, pl.Series):
+            if isinstance(out, pl.Series) or isinstance(out, pl.DataFrame):
+                native = nw.to_native(check_obj.frame)
+                # native may be a LazyFrame; collect to attach an eager column.
+                if isinstance(native, pl.LazyFrame):
+                    native = native.collect()
+                if isinstance(out, pl.Series):
+                    bool_col = out.alias(CHECK_OUTPUT_KEY)
+                else:
+                    # pl.DataFrame must contain a CHECK_OUTPUT_KEY column
+                    bool_col = out[CHECK_OUTPUT_KEY].alias(CHECK_OUTPUT_KEY)
                 return nw.from_native(
-                    out.to_frame(CHECK_OUTPUT_KEY), eager_only=True
+                    native.with_columns(bool_col), eager_only=True
                 )
-            elif isinstance(out, pl.DataFrame):
-                return nw.from_native(out, eager_only=True)
         except ImportError:
             pass
 
