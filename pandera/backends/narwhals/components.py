@@ -182,6 +182,8 @@ class ColumnBackend(NarwhalsSchemaBackend):
             .agg(nw.len().alias("_count"))
         )
         dup_values = grouped.filter(nw.col("_count") > 1).select(col)
+        # Bounded: dup_values contains only the distinct duplicate column values — not the full frame.
+        # Materialization is required here to evaluate len() and produce failure_cases.
         native_dups = nw.to_native(_materialize(dup_values))
 
         results = []
@@ -341,7 +343,8 @@ class ColumnBackend(NarwhalsSchemaBackend):
                             # SQL-lazy backend (ibis): nw.to_native returns ibis.Table directly
                             fc = nw.to_native(fc)
                         else:
-                            # Polars lazy: collect to eager then unwrap
+                            # Error path: collect failure_cases LazyFrame to eager.
+                            # Bounded: fc contains only failing rows from the check, not the full frame.
                             fc = nw.to_native(_materialize(fc))
                     elif isinstance(fc, nw.DataFrame):
                         fc = nw.to_native(fc)

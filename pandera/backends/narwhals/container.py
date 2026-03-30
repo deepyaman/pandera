@@ -43,6 +43,10 @@ def _to_frame_kind_nw(lf: nw.LazyFrame, return_type: type):
     # type itself, an eager class or ibis.Table does not.
     if not hasattr(return_type, "collect"):
         if hasattr(native, "collect"):
+            # Acceptable: full-frame collect only at the final validation return boundary.
+            # The caller originally passed an eager frame (e.g. pl.DataFrame) and expects
+            # an eager result back.  This is a user-visible materialization at schema exit,
+            # not an internal hot-path collect.
             return native.collect()
     return native
 
@@ -157,7 +161,8 @@ class DataFrameSchemaBackend(NarwhalsSchemaBackend):
                                 # SQL-lazy backend (ibis): nw.to_native returns ibis.Table directly
                                 fc = nw.to_native(fc)
                             else:
-                                # Polars lazy: collect to eager then unwrap
+                                # Error path: collect failure_cases LazyFrame to eager.
+                                # Bounded: fc contains only failing rows, not the full frame.
                                 fc = nw.to_native(_materialize(fc))
                         elif isinstance(fc, nw.DataFrame):
                             fc = nw.to_native(fc)
@@ -499,6 +504,8 @@ class DataFrameSchemaBackend(NarwhalsSchemaBackend):
                 .agg(nw.len().alias("_count"))
             )
             dup_rows = grouped.filter(nw.col("_count") > 1).drop("_count")
+            # Bounded: dup_rows contains only rows with duplicate key values — not the full frame.
+            # Materialization is required here to evaluate len() and produce failure_cases.
             native_dups = nw.to_native(_materialize(dup_rows))
 
             if len(native_dups) > 0:
