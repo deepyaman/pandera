@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PR Review Cleanup & Test Strategy
-status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-04-10T21:29:16.412Z"
+status: verifying
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-04-10T21:35:42.600Z"
 last_activity: 2026-04-10
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-29 after v1.2 milestone start)
 
 Phase: 02 (documentation-polish) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-10
 
 Progress: [░░░░░░░░░░] 0%
@@ -50,6 +50,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P03 | 8 minutes | 2 tasks | 1 files |
 | Phase 01 P06 | 3 | 2 tasks | 3 files |
 | Phase 02 P01 | 1 | 1 tasks | 1 files |
+| Phase 02 P02 | 4 | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,8 @@ Key decisions from v1.1 still relevant:
 - [Phase 01]: DataFrameSchema import guarded by TYPE_CHECKING — polars not required at runtime for narwhals container backend
 - [Phase 01]: from __future__ import annotations enables lazy annotation evaluation so TYPE_CHECKING guard works correctly with PEP 563
 - [Phase 02]: Appended Narwhals-backend caveat as continuation of existing sentence — minimal diff, reads naturally in RST; text wraps at 88 chars per project convention
+- [Phase 02]: Prose 'Narwhals' always capitalized; code identifiers (imports, variable names, module paths) remain lowercase — established via DOCS-02 sweep
+- [Phase 02]: api/narwhals/types.py and utils.py capitalized in Task 3 sweep — plan did not enumerate them but D-04 rule applies to all pandera/*.py prose
 
 ### Pending Todos
 
@@ -76,6 +79,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-10T21:29:16.409Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-04-10T21:35:42.597Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None

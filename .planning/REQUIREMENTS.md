@@ -32,7 +32,7 @@ Requirements for the PR Review Cleanup & Test Strategy milestone. Each maps to r
 ### Documentation
 
 - [x] **DOCS-01**: `pandera/api/checks.py` `native` param docstring clarifies it only applies when using the Narwhals backend (not all backends)
-- [ ] **DOCS-02**: "Narwhals" is consistently capitalized in all comments, docstrings, and `register.py` files
+- [x] **DOCS-02**: "Narwhals" is consistently capitalized in all comments, docstrings, and `register.py` files
 
 ### Testing Strategy
 
@@ -82,7 +82,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EAGER-02 | Phase 1 | Pending |
 | CHECKS-01 | Phase 1 | Pending |
 | DOCS-01 | Phase 2 | Complete |
-| DOCS-02 | Phase 2 | Pending |
+| DOCS-02 | Phase 2 | Complete |
 | TEST-01 | Phase 3 | Pending |
 | TEST-02 | Phase 3 | Pending |
 | TEST-03 | Phase 3 | Pending |

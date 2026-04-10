@@ -43,7 +43,7 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 **Milestone Goal:** Address all feedback from PR review 4027330818 — eliminate backend-specific coupling, unify native type detection, fix eager execution, fix custom checks, polish documentation, and establish a cohesive CI test strategy.
 
 - [x] **Phase 1: Structural Cleanup** — Unify type detection, isolate backend code, eliminate eager execution, fix custom checks (completed 2026-03-30)
-- [ ] **Phase 2: Documentation Polish** — Clarify `native` param scope, fix "Narwhals" capitalization everywhere
+- [x] **Phase 2: Documentation Polish** — Clarify `native` param scope, fix "Narwhals" capitalization everywhere (completed 2026-04-10)
 - [ ] **Phase 3: CI Test Strategy** — Ensure existing backends run without Narwhals; parametrize Narwhals tests across all frame types; document CI matrix
 
 ## Phase Details
@@ -78,7 +78,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Append Narwhals-backend caveat to :param native: docstring in pandera/api/checks.py (DOCS-01)
-- [ ] 02-02-PLAN.md — Capitalize "Narwhals" prose across pandera/ .py files, preserve code identifiers (DOCS-02)
+- [x] 02-02-PLAN.md — Capitalize "Narwhals" prose across pandera/ .py files, preserve code identifiers (DOCS-02)
 
 ### Phase 3: CI Test Strategy
 **Goal**: The test suite is structured so existing Polars/Ibis backend tests run cleanly without Narwhals installed, and the Narwhals backend tests exercise all supported frame types with a documented CI matrix
@@ -100,5 +100,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Structural Cleanup | 6/6 | Complete   | 2026-04-10 |
-| 2. Documentation Polish | 1/2 | In Progress|  |
+| 2. Documentation Polish | 2/2 | Complete   | 2026-04-10 |
 | 3. CI Test Strategy | 0/TBD | Not started | - |
