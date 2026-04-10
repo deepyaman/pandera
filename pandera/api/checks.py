@@ -88,7 +88,9 @@ class Check(BaseCheck):
             ``check_fn(native_frame, key)``. If False, the check function
             receives a narwhals expression ``nw.col(key)`` (a ``nw.Expr``)
             as its sole argument: ``check_fn(nw.col(key))``. Builtin checks
-            use ``native=False``.
+            use ``native=False``. Note: This parameter only applies when
+            using the Narwhals backend; it is ignored by the native pandas,
+            polars, and ibis backends.
         :param name: optional name for the check.
         :param error: custom error message if series fails validation
             check.
