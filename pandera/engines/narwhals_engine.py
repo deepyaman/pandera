@@ -6,11 +6,12 @@ from typing import Any, Optional, Union
 import narwhals.stable.v1 as nw
 
 from pandera import dtypes, errors
-from pandera.api.narwhals.utils import _materialize
+from pandera.api.narwhals.types import NarwhalsData
+from pandera.api.narwhals.utils import _materialize, _to_native
 from pandera.dtypes import immutable
 from pandera.engines import engine
 
-NarwhalsDataContainer = Any  # Union[nw.LazyFrame, NarwhalsData] — imported lazily
+NarwhalsDataContainer = Any  # Union[nw.LazyFrame, NarwhalsData]
 
 COERCION_ERRORS = (
     TypeError,
@@ -32,8 +33,6 @@ class DataType(dtypes.DataType):
         ``nw.LazyFrame``.  Always returns a ``nw.LazyFrame`` (lazy — does
         not collect).
         """
-        from pandera.api.narwhals.types import NarwhalsData
-
         if isinstance(data_container, nw.LazyFrame):
             data_container = NarwhalsData(frame=data_container)
 
@@ -53,9 +52,6 @@ class DataType(dtypes.DataType):
 
         :raises: :class:`~pandera.errors.ParserError`: if coercion fails
         """
-        from pandera.api.narwhals.types import NarwhalsData
-        from pandera.api.narwhals.utils import _to_native
-
         if isinstance(data_container, nw.LazyFrame):
             data_container = NarwhalsData(frame=data_container)
 

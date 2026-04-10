@@ -1,5 +1,6 @@
 """Column backend for Narwhals — per-column validation layer."""
 
+import re
 import warnings
 from collections.abc import Iterable
 from typing import cast
@@ -99,7 +100,6 @@ class ColumnBackend(NarwhalsSchemaBackend):
     def get_regex_columns(self, schema, check_obj) -> Iterable:
         """Get column names matching a regex pattern."""
         frame_cols = check_obj.collect_schema().names()
-        import re
         return [c for c in frame_cols if re.search(schema.selector, c)]
 
     @validate_scope(scope=ValidationScope.DATA)
