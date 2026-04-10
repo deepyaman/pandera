@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PR Review Cleanup & Test Strategy
 status: executing
-stopped_at: Phase 02 context gathered (discuss mode)
-last_updated: "2026-04-10T17:44:45.192Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-04-10T21:29:16.412Z"
 last_activity: 2026-04-10
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29 after v1.2 milestone start)
 
 **Core value:** Users can validate any Narwhals-supported dataframe library through a single, consistent backend — reducing maintenance burden and unlocking lazy validation and future library support for free.
-**Current focus:** Phase 01 — structural-cleanup
+**Current focus:** Phase 02 — documentation-polish
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
+Phase: 02 (documentation-polish) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
 Last activity: 2026-04-10
 
@@ -49,6 +49,7 @@ Progress: [░░░░░░░░░░] 0%
 *Updated after each plan completion*
 | Phase 01 P03 | 8 minutes | 2 tasks | 1 files |
 | Phase 01 P06 | 3 | 2 tasks | 3 files |
+| Phase 02 P01 | 1 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,7 @@ Key decisions from v1.1 still relevant:
 - [Phase 01]: All inner polars imports in base.py guarded with try/except ImportError; functools hoisted to module level
 - [Phase 01]: DataFrameSchema import guarded by TYPE_CHECKING — polars not required at runtime for narwhals container backend
 - [Phase 01]: from __future__ import annotations enables lazy annotation evaluation so TYPE_CHECKING guard works correctly with PEP 563
+- [Phase 02]: Appended Narwhals-backend caveat as continuation of existing sentence — minimal diff, reads naturally in RST; text wraps at 88 chars per project convention
 
 ### Pending Todos
 
@@ -74,6 +76,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-10T17:44:45.185Z
-Stopped at: Phase 02 context gathered (discuss mode)
-Resume file: .planning/phases/02-documentation-polish/02-CONTEXT.md
+Last session: 2026-04-10T21:29:16.409Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None

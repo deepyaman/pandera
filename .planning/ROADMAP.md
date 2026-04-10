@@ -77,7 +77,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Append Narwhals-backend caveat to :param native: docstring in pandera/api/checks.py (DOCS-01)
+- [x] 02-01-PLAN.md — Append Narwhals-backend caveat to :param native: docstring in pandera/api/checks.py (DOCS-01)
 - [ ] 02-02-PLAN.md — Capitalize "Narwhals" prose across pandera/ .py files, preserve code identifiers (DOCS-02)
 
 ### Phase 3: CI Test Strategy
@@ -100,5 +100,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Structural Cleanup | 6/6 | Complete   | 2026-04-10 |
-| 2. Documentation Polish | 0/TBD | Not started | - |
+| 2. Documentation Polish | 1/2 | In Progress|  |
 | 3. CI Test Strategy | 0/TBD | Not started | - |
