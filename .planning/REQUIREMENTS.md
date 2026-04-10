@@ -18,7 +18,7 @@ Requirements for the PR Review Cleanup & Test Strategy milestone. Each maps to r
 - [ ] **CLEAN-01**: `narwhals/checks.py` contains no Polars-specific imports or code paths
 - [ ] **CLEAN-02**: `narwhals/container.py` does not import from `pandera.api.polars.components`
 - [x] **CLEAN-03**: `narwhals/base.py` does not produce code paths that require Polars installed when validating Ibis frames (base.py:294 branch)
-- [ ] **CLEAN-04**: All inner imports moved to top-level (stdlib in `container.py:449`; narwhals engine imports in `narwhals_engine.py:34,56`; any others)
+- [x] **CLEAN-04**: All inner imports moved to top-level (stdlib in `container.py:449`; narwhals engine imports in `narwhals_engine.py:34,56`; any others)
 
 ### Eager Execution
 
@@ -77,7 +77,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLEAN-01 | Phase 1 | Pending |
 | CLEAN-02 | Phase 1 | Pending |
 | CLEAN-03 | Phase 1 | Complete |
-| CLEAN-04 | Phase 1 | Pending |
+| CLEAN-04 | Phase 1 | Complete |
 | EAGER-01 | Phase 1 | Pending |
 | EAGER-02 | Phase 1 | Pending |
 | CHECKS-01 | Phase 1 | Pending |

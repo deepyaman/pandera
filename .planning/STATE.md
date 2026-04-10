@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PR Review Cleanup & Test Strategy
 status: executing
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-03-30T12:54:42.669Z"
-last_activity: 2026-03-30
+stopped_at: Completed 01-06-PLAN.md
+last_updated: "2026-04-10T13:29:21.207Z"
+last_activity: 2026-04-10
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 6
+  completed_plans: 6
   percent: 0
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-29 after v1.2 milestone start)
 ## Current Position
 
 Phase: 01 (structural-cleanup) — EXECUTING
-Plan: 2 of 5
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-03-30
+Last activity: 2026-04-10
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -48,6 +48,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01 P03 | 8 minutes | 2 tasks | 1 files |
+| Phase 01 P06 | 3 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -59,6 +60,8 @@ Key decisions from v1.1 still relevant:
 - `nw.from_native(failure_cases, eager_only=False)` unified pattern for failure case counting
 - Single materialization point for scalar bool pass/fail; failure_cases stay lazy through check loop
 - [Phase 01]: All inner polars imports in base.py guarded with try/except ImportError; functools hoisted to module level
+- [Phase 01]: DataFrameSchema import guarded by TYPE_CHECKING — polars not required at runtime for narwhals container backend
+- [Phase 01]: from __future__ import annotations enables lazy annotation evaluation so TYPE_CHECKING guard works correctly with PEP 563
 
 ### Pending Todos
 
@@ -71,6 +74,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-30T12:54:42.666Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-04-10T13:29:21.204Z
+Stopped at: Completed 01-06-PLAN.md
 Resume file: None
