@@ -46,7 +46,7 @@ Users can validate any Narwhals-supported dataframe library through a single, co
 - [ ] Eliminate unnecessary .collect() / eager execution (EAGER-01 – EAGER-02)
 - [ ] Fix import organization — all inner imports moved to top-level (CLEAN-04)
 - [ ] Custom checks support investigation and fix (CHECKS-01)
-- [ ] Documentation: "native" param scope, "Narwhals" capitalization (DOCS-01 – DOCS-02)
+- ✓ Documentation: "native" param scope, "Narwhals" capitalization (DOCS-01 – DOCS-02) — Validated in Phase 02: documentation-polish
 - [ ] Cohesive CI test strategy: existing + Narwhals-backed Polars/Ibis (TEST-01 – TEST-03)
 
 **Deferred (future milestones):**
