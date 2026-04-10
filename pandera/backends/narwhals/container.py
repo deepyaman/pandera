@@ -158,8 +158,8 @@ class DataFrameSchemaBackend(NarwhalsSchemaBackend):
                     if result.schema_error is not None:
                         error = result.schema_error
                     else:
-                        # Unwrap narwhals failure_cases to native at the SchemaError boundary.
-                        # CoreCheckResult carries narwhals wrappers; SchemaError.failure_cases
+                        # Unwrap Narwhals failure_cases to native at the SchemaError boundary.
+                        # CoreCheckResult carries Narwhals wrappers; SchemaError.failure_cases
                         # is the public API and must be native.
                         fc = result.failure_cases
                         if isinstance(fc, nw.LazyFrame):
@@ -260,7 +260,7 @@ class DataFrameSchemaBackend(NarwhalsSchemaBackend):
         for schema_component in schema_components:
             try:
                 result = schema_component.validate(native_obj, lazy=lazy)
-                # Narwhals backend returns a narwhals frame, not pl.LazyFrame.
+                # Narwhals backend returns a Narwhals frame, not pl.LazyFrame.
                 # The component validate() not raising is the success signal.
                 check_passed.append(result is not None)
             except SchemaError as err:

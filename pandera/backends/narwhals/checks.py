@@ -51,7 +51,7 @@ class NarwhalsCheckBackend(BaseCheckBackend):
                 )
                 # Force evaluation on a minimal probe to catch SQL-lazy
                 # backends that reject map_batches at query-plan build time
-                # (narwhals raises NotImplementedError during .select()).
+                # (Narwhals raises NotImplementedError during .select()).
                 frame.select(expr)
                 return expr
             except NotImplementedError:
@@ -79,7 +79,7 @@ class NarwhalsCheckBackend(BaseCheckBackend):
 
     @staticmethod
     def _normalize_native_output(out, check_obj: NarwhalsData):
-        """Normalize native outputs from native=True checks to narwhals types.
+        """Normalize native outputs from native=True checks to Narwhals types.
 
         Handles ibis expression types (BooleanScalar, BooleanColumn, Table) and
         polars native types (pl.Series of booleans, pl.DataFrame with CHECK_OUTPUT_KEY).

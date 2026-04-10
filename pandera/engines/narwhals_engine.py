@@ -58,7 +58,7 @@ class DataType(dtypes.DataType):
         try:
             lf = self.coerce(data_container)
             # Bounded probe: exercise the cast with 1 row instead of full frame.
-            # For nw.LazyFrame (polars): head(1).collect() stays in narwhals.
+            # For nw.LazyFrame (polars): head(1).collect() stays in Narwhals.
             # For nw.DataFrame (ibis): _materialize(head(1)) handles .execute().
             if isinstance(lf, nw.LazyFrame):
                 lf.head(1).collect()
@@ -94,7 +94,7 @@ class Engine(metaclass=engine.Engine, base_pandera_dtypes=DataType):
 
     @classmethod
     def dtype(cls, data_type: Any) -> dtypes.DataType:
-        """Convert input into a narwhals-compatible
+        """Convert input into a Narwhals-compatible
         Pandera :class:`~pandera.dtypes.DataType` object.
 
         If ``data_type`` is an engine-specific dtype from another backend

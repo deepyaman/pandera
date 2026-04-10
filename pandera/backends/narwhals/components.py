@@ -141,7 +141,7 @@ class ColumnBackend(NarwhalsSchemaBackend):
                 )
             ]
 
-        # failure_cases and check_output stay lazy — narwhals wrappers, not native.
+        # failure_cases and check_output stay lazy — Narwhals wrappers, not native.
         failure_cases = combined_lf.filter(nw.col(CHECK_OUTPUT_KEY)).select(col)
         return [
             CoreCheckResult(
@@ -242,7 +242,7 @@ class ColumnBackend(NarwhalsSchemaBackend):
             # through the shared abstract pandera base class. Parametric types
             # (List, Struct) fall back to a direct check, which will report
             # WRONG_DATATYPE for cross-engine schemas. TODO: root fix is in schema
-            # construction — pandera.polars/pandera.ibis should produce narwhals
+            # construction — pandera.polars/pandera.ibis should produce Narwhals
             # engine dtypes when the Narwhals backend is active.
             try:
                 schema_nw_dtype = narwhals_engine.Engine.dtype(schema.dtype)
@@ -329,10 +329,10 @@ class ColumnBackend(NarwhalsSchemaBackend):
                     error = result.schema_error
                 else:
                     assert result.reason_code is not None
-                    # Convert narwhals failure_cases to native for SchemaError public API.
-                    # CoreCheckResult carries narwhals wrappers; SchemaError.failure_cases
+                    # Convert Narwhals failure_cases to native for SchemaError public API.
+                    # CoreCheckResult carries Narwhals wrappers; SchemaError.failure_cases
                     # is the public API and must be native (pl.DataFrame, ibis.Table, etc.)
-                    # so callers can use the result without narwhals knowledge.
+                    # so callers can use the result without Narwhals knowledge.
                     # For SQL-lazy backends (ibis): nw.to_native(LazyFrame) returns ibis.Table
                     #   directly (no execution) — hasattr(native, 'execute') detects this case.
                     # For polars LazyFrame: must collect() first, then to_native → pl.DataFrame.
