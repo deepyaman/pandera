@@ -3,7 +3,7 @@ import narwhals.stable.v1 as nw
 
 
 def _to_native(frame):
-    """Convert a narwhals frame to its native backend frame.
+    """Convert a Narwhals frame to its native backend frame.
 
     Uses ``pass_through=True`` so that already-native frames (e.g. a raw
     ``polars.LazyFrame``) are returned unchanged without raising an error.
