@@ -1,17 +1,23 @@
 """Validation backend for Narwhals DataFrameSchema."""
 
+from __future__ import annotations
+
 import copy
+import re
 import traceback
 import warnings
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import narwhals.stable.v1 as nw
 
 from pandera.api.base.error_handler import get_error_category
 from pandera.api.narwhals.error_handler import ErrorHandler
 from pandera.api.narwhals.utils import _is_lazy, _to_native
-from pandera.api.polars.container import DataFrameSchema
+
+if TYPE_CHECKING:
+    from pandera.api.polars.container import DataFrameSchema
+
 from pandera.backends.base import ColumnInfo, CoreCheckResult
 from pandera.backends.narwhals.base import NarwhalsSchemaBackend, _materialize
 from pandera.config import ValidationDepth, ValidationScope, config_context, get_config_context
@@ -244,8 +250,6 @@ class DataFrameSchemaBackend(NarwhalsSchemaBackend):
         lazy: bool,
     ) -> list[CoreCheckResult]:
         """Run checks for all schema components."""
-        from pandera.api.narwhals.utils import _to_native
-
         check_results = []
         check_passed = []
         # Convert to native frame for column component dispatch.
@@ -435,8 +439,6 @@ class DataFrameSchemaBackend(NarwhalsSchemaBackend):
         column_info: Any,
     ) -> list[CoreCheckResult]:
         """Check that all columns in the schema are present in the dataframe."""
-        from pandera.api.narwhals.utils import _to_native
-
         results = []
         if column_info.absent_column_names and not schema.add_missing_columns:
             for colname in column_info.absent_column_names:
@@ -445,7 +447,6 @@ class DataFrameSchemaBackend(NarwhalsSchemaBackend):
                     # regex pattern — try to select using regex expression
                     try:
                         frame_cols = check_obj.collect_schema().names()
-                        import re
                         matching = [c for c in frame_cols if re.search(colname, c)]
                         if matching:
                             continue
