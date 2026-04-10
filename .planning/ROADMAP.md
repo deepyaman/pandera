@@ -74,10 +74,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. The `native` parameter docstring in `pandera/api/checks.py` states explicitly that it only applies when using the Narwhals backend
   2. All occurrences of "narwhals" in comments, docstrings, and `register.py` files that refer to the library name are capitalized as "Narwhals"
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 2 to break down)
+- [ ] 02-01-PLAN.md — Append Narwhals-backend caveat to :param native: docstring in pandera/api/checks.py (DOCS-01)
+- [ ] 02-02-PLAN.md — Capitalize "Narwhals" prose across pandera/ .py files, preserve code identifiers (DOCS-02)
 
 ### Phase 3: CI Test Strategy
 **Goal**: The test suite is structured so existing Polars/Ibis backend tests run cleanly without Narwhals installed, and the Narwhals backend tests exercise all supported frame types with a documented CI matrix
