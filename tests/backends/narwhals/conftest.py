@@ -1,4 +1,21 @@
-"""Shared fixtures for narwhals backend tests."""
+"""Shared fixtures for narwhals backend tests.
+
+CI Matrix (TEST-01, TEST-02, TEST-03):
+
+- tests/polars/ runs WITHOUT narwhals installed (CI job: unit-tests-dataframe-extras,
+  extra=polars). Guarded by tests/polars/conftest.py which re-registers the native
+  polars backend at session start (see TEST-01 in that file).
+- tests/ibis/ runs WITHOUT narwhals installed (CI job: unit-tests-dataframe-extras,
+  extra=ibis). Guarded by tests/ibis/conftest.py.
+- tests/backends/narwhals/ (this directory) runs WITH narwhals + polars + ibis all
+  installed together (CI job: unit-tests-narwhals, extra=narwhals). The
+  `make_narwhals_frame` fixture below parametrizes every test across the three
+  supported native frame types (pl.DataFrame, pl.LazyFrame, ibis.Table) so each
+  test runs 3 times and no frame type is silently skipped (TEST-02).
+
+See .github/workflows/ci-tests.yml for the full matrix and .planning/REQUIREMENTS.md
+for TEST-01, TEST-02, and TEST-03 definitions.
+"""
 import warnings
 
 import pytest
