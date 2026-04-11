@@ -30,19 +30,25 @@ def _suppress_narwhals_warning():
 
 
 @pytest.fixture(
-    params=["polars", "ibis"],
-    ids=["polars", "ibis"],
+    params=["polars_eager", "polars_lazy", "ibis_table"],
+    ids=["polars_eager", "polars_lazy", "ibis_table"],
 )
 def make_narwhals_frame(request):
-    """Return a callable that creates an nw.LazyFrame for the given backend."""
+    """Return a callable that creates an nw frame across all 3 supported native types.
+
+    TEST-02: parametrizes Narwhals backend tests across pl.DataFrame (eager),
+    pl.LazyFrame (lazy), and ibis.Table — all three supported native frame types.
+    """
     backend = request.param
 
     def _make(data: dict):
-        if backend == "polars":
+        if backend == "polars_eager":
+            return nw.from_native(pl.DataFrame(data), eager_only=True)
+        elif backend == "polars_lazy":
             return nw.from_native(
                 pl.LazyFrame(data), eager_or_interchange_only=False
             )
-        elif backend == "ibis":
+        elif backend == "ibis_table":
             import pandas as pd
             import ibis
             return nw.from_native(
