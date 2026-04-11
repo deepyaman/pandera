@@ -47,7 +47,7 @@ Users can validate any Narwhals-supported dataframe library through a single, co
 - [ ] Fix import organization — all inner imports moved to top-level (CLEAN-04)
 - [ ] Custom checks support investigation and fix (CHECKS-01)
 - ✓ Documentation: "native" param scope, "Narwhals" capitalization (DOCS-01 – DOCS-02) — Validated in Phase 02: documentation-polish
-- [ ] Cohesive CI test strategy: existing + Narwhals-backed Polars/Ibis (TEST-01 – TEST-03)
+- ✓ Cohesive CI test strategy: existing + Narwhals-backed Polars/Ibis (TEST-01 – TEST-03) — Validated in Phase 03: ci-test-strategy
 
 **Deferred (future milestones):**
 - [ ] pandas validation working via Narwhals backend (including lazy mode via Narwhals lazy graph)
@@ -66,6 +66,8 @@ Users can validate any Narwhals-supported dataframe library through a single, co
 - `narwhals stable.v2` migration — monitor releases; migrate only when officially stabilized
 
 ## Context
+
+**v1.2 milestone phase 03 complete (2026-04-11):** CI test strategy wired — 3-way fixture parametrization (TEST-02), polars/ibis conftest isolation fixtures (TEST-01), narwhals CI job in GitHub Actions (TEST-03).
 
 **v1.1 shipped (2026-03-25):** 9 phases, 22 plans, 21 Python files changed, +2,376 / -626 lines over 10 days. 221 tests passing.
 
