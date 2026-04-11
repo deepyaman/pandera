@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PR Review Cleanup & Test Strategy
-status: verifying
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-04-10T21:38:31.415Z"
-last_activity: 2026-04-10
+status: executing
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-04-11T13:37:11.714Z"
+last_activity: 2026-04-11
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 11
+  completed_plans: 9
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29 after v1.2 milestone start)
 
 **Core value:** Users can validate any Narwhals-supported dataframe library through a single, consistent backend — reducing maintenance burden and unlocking lazy validation and future library support for free.
-**Current focus:** Phase 02 — documentation-polish
+**Current focus:** Phase 03 — ci-test-strategy
 
 ## Current Position
 
-Phase: 3
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-10
+Phase: 03 (ci-test-strategy) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-11
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -51,6 +51,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P06 | 3 | 2 tasks | 3 files |
 | Phase 02 P01 | 1 | 1 tasks | 1 files |
 | Phase 02 P02 | 4 | 3 tasks | 10 files |
+| Phase 03 P01 | 5 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,8 @@ Key decisions from v1.1 still relevant:
 - [Phase 02]: Appended Narwhals-backend caveat as continuation of existing sentence — minimal diff, reads naturally in RST; text wraps at 88 chars per project convention
 - [Phase 02]: Prose 'Narwhals' always capitalized; code identifiers (imports, variable names, module paths) remain lowercase — established via DOCS-02 sweep
 - [Phase 02]: api/narwhals/types.py and utils.py capitalized in Task 3 sweep — plan did not enumerate them but D-04 rule applies to all pandera/*.py prose
+- [Phase 03]: Used eager_only=True for pl.DataFrame wrapping in narwhals (matches API requirement for eager frames)
+- [Phase 03]: Strategy C class-level docstring annotation preferred for intentionally type-specific tests in test_e2e.py — per-line comments would be too noisy
 
 ### Pending Todos
 
@@ -79,6 +82,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-10T21:35:42.597Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-04-11T13:37:11.710Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None
