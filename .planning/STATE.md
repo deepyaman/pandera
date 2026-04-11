@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PR Review Cleanup & Test Strategy
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-04-11T13:37:11.714Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-04-11T13:43:49.236Z"
 last_activity: 2026-04-11
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-29 after v1.2 milestone start)
 ## Current Position
 
 Phase: 03 (ci-test-strategy) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-11
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02 P01 | 1 | 1 tasks | 1 files |
 | Phase 02 P02 | 4 | 3 tasks | 10 files |
 | Phase 03 P01 | 5 | 2 tasks | 3 files |
+| Phase 03 P02 | 10 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Key decisions from v1.1 still relevant:
 - [Phase 02]: api/narwhals/types.py and utils.py capitalized in Task 3 sweep — plan did not enumerate them but D-04 rule applies to all pandera/*.py prose
 - [Phase 03]: Used eager_only=True for pl.DataFrame wrapping in narwhals (matches API requirement for eager frames)
 - [Phase 03]: Strategy C class-level docstring annotation preferred for intentionally type-specific tests in test_e2e.py — per-line comments would be too noisy
+- [Phase 03]: hasattr guard on cache_clear for register_ibis_backends — function not lru_cache-decorated in main branch; guard prevents AttributeError while remaining correct when lru_cache is present
+- [Phase 03]: TEST-01 import-line check uses line.lstrip().startswith() — catches top-of-line imports only; string pandera.backends.narwhals in comments/docstrings not flagged as violation
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-11T13:37:11.710Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-04-11T13:43:49.233Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
