@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PR Review Cleanup & Test Strategy
-status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-04-11T13:43:49.236Z"
+status: verifying
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-04-11T13:47:50.157Z"
 last_activity: 2026-04-11
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-29 after v1.2 milestone start)
 
 Phase: 03 (ci-test-strategy) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-11
 
 Progress: [░░░░░░░░░░] 0%
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02 P02 | 4 | 3 tasks | 10 files |
 | Phase 03 P01 | 5 | 2 tasks | 3 files |
 | Phase 03 P02 | 10 | 2 tasks | 5 files |
+| Phase 03 P03 | 2 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,9 @@ Key decisions from v1.1 still relevant:
 - [Phase 03]: Strategy C class-level docstring annotation preferred for intentionally type-specific tests in test_e2e.py — per-line comments would be too noisy
 - [Phase 03]: hasattr guard on cache_clear for register_ibis_backends — function not lru_cache-decorated in main branch; guard prevents AttributeError while remaining correct when lru_cache is present
 - [Phase 03]: TEST-01 import-line check uses line.lstrip().startswith() — catches top-of-line imports only; string pandera.backends.narwhals in comments/docstrings not flagged as violation
+- [Phase 03]: ubuntu-only CI for unit-tests-narwhals (Python 3.11/3.12) — narwhals backend is experimental, full OS matrix premature
+- [Phase 03]: polars+ibis co-installed in narwhals nox session via _testing_requirements augmentation — narwhals extra alone does not list them
+- [Phase 03]: test_dir for narwhals is backends/narwhals (not narwhals) — reflects non-flat location under tests/backends/
 
 ### Pending Todos
 
@@ -85,6 +89,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-11T13:43:49.233Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-04-11T13:47:50.154Z
+Stopped at: Completed 03-03-PLAN.md
 Resume file: None

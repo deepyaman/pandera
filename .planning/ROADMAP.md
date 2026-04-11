@@ -44,7 +44,7 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 
 - [x] **Phase 1: Structural Cleanup** — Unify type detection, isolate backend code, eliminate eager execution, fix custom checks (completed 2026-03-30)
 - [x] **Phase 2: Documentation Polish** — Clarify `native` param scope, fix "Narwhals" capitalization everywhere (completed 2026-04-10)
-- [ ] **Phase 3: CI Test Strategy** — Ensure existing backends run without Narwhals; parametrize Narwhals tests across all frame types; document CI matrix
+- [x] **Phase 3: CI Test Strategy** — Ensure existing backends run without Narwhals; parametrize Narwhals tests across all frame types; document CI matrix (completed 2026-04-11)
 
 ## Phase Details
 
@@ -101,4 +101,4 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Structural Cleanup | 6/6 | Complete   | 2026-04-10 |
 | 2. Documentation Polish | 2/2 | Complete   | 2026-04-10 |
-| 3. CI Test Strategy | 2/3 | In Progress|  |
+| 3. CI Test Strategy | 3/3 | Complete   | 2026-04-11 |

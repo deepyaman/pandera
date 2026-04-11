@@ -38,7 +38,7 @@ Requirements for the PR Review Cleanup & Test Strategy milestone. Each maps to r
 
 - [x] **TEST-01**: Existing Polars and Ibis backend tests pass (or are `xfail`-marked with justification) when Narwhals is installed in the same environment
 - [x] **TEST-02**: Narwhals backend tests parametrize across `pl.DataFrame`, `pl.LazyFrame`, and `ibis.Table`; all parametrized cases pass
-- [ ] **TEST-03**: CI matrix is documented and covers: (a) existing backends without Narwhals installed, (b) Narwhals backend with all supported frame types
+- [x] **TEST-03**: CI matrix is documented and covers: (a) existing backends without Narwhals installed, (b) Narwhals backend with all supported frame types
 
 ## Future Requirements
 
@@ -85,7 +85,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-02 | Phase 2 | Complete |
 | TEST-01 | Phase 3 | Complete |
 | TEST-02 | Phase 3 | Complete |
-| TEST-03 | Phase 3 | Pending |
+| TEST-03 | Phase 3 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 15 total
